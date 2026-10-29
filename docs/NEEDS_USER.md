@@ -82,4 +82,15 @@ Nothing here blocks anything that was built. In rough order of value:
    cutoff the sustain they never had. Only on AC power with clear vents; the stable preset caps itself. No agent will run it without being asked.
 6. **Optional: `uv run playwright install chromium`** (about 150 MB from Microsoft's CDN) so the browser tests stop depending on the installed Edge.
 7. **Cooling (item 4 above)** is still the only way to raise the CPU-and-GPU-together ceiling.
-8. **Publishing:** the release was pushed to `origin` (`main` and tag `v0.1-poc1`) by the wrap-up agent as asked. Nothing else was published.
+8. **Published:** `main` (merge commit `b3ee585`), `dev` and the tag `v0.1-poc1` were pushed to `origin` as asked. Nothing else was published.
+9. **Delete the merged branches (S).** The wrap-up agent tried and the permission system refused branch deletion, so it did not retry. All four are already contained in `dev` and `main`; the tips are recorded so nothing is lost. Run:
+
+   ```
+   git branch -d feature/skip-analytics                       # local, was 7bc0c40
+   git push origin --delete cursor/insight-agents-442b        # was 5e47ccc
+   git push origin --delete feature/recipe-planner            # was 7056049
+   git push origin --delete feature/skip-analytics            # was 8edf0ac
+   ```
+
+   There are no leftover git worktrees (`git worktree list` shows only `C:/Pastiche`). `.venv-audit/` (the GPU audit's separate virtual environment, git-ignored)
+   was left alone; delete it if you do not need it.
