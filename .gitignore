@@ -8,6 +8,7 @@ reports/peak/*/raw/
 __pycache__/
 *.py[cod]
 .venv/
+.venv-audit/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
