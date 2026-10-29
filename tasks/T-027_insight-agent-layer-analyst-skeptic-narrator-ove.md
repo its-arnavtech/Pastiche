@@ -1,14 +1,14 @@
 ---
 id: T-027
 title: Insight agent layer: analyst, skeptic, narrator over skip candidates
-status: in_progress
+status: done
 owner: cursor-2
 branch: cursor/insight-agents-442b
 lane: none
 depends_on: [T-014, T-015, T-016]
 owns_paths: [src/remixer/insights/, tests/insights/]
 claimed_at: 2026-10-29T05:17:48Z
-heartbeat_at: 2026-10-29T05:17:48Z
+heartbeat_at: 2026-10-29T05:24:32Z
 priority: P1
 ---
 
@@ -25,3 +25,4 @@ All tests pass; decision records for thresholds, caps, budget and update rule; p
 - 2026-10-29T04:40:17Z cursor-opus: created
 - 2026-10-29T04:40:17Z cursor-opus: claimed
 - 2026-10-29T05:17:48Z cursor-2: takeover from cursor-opus: cursor-opus stopped at a usage limit with the insight layer uncommitted: roles, pipeline and inbox wiring exist, tests and decision records do not.
+- 2026-10-29T05:24:32Z cursor-2: done: done: analyst/skeptic/narrator, lifecycle, tuning, budget, confound tests (precision 0.936, recall 0.975), inbox wiring, decisions 0020/0021, tasks T-028 and T-029
