@@ -433,9 +433,16 @@ class Separator:
 
 def summary(met: Metrics) -> dict:
     wall = time.perf_counter() - met.t0
+    # skip warm-up (first batches, cudnn autotune): windows ending in the first 15 s after the first one
+    first = met.rows[0]["ts"] if met.rows else 0
+    steady = [r for r in met.rows if r["ts"] - first >= 15] or met.rows[1:] or met.rows
+    s_audio, s_wall = sum(r["audio_s"] for r in steady), sum(r["wall_s"] for r in steady)
+    passes = steady[-1]["passes"] if steady else 1
     return {"stage": met.stage, "tracks": met.tracks, "audio_s": round(met.audio_s, 1),
             "wall_s": round(wall, 1), "rate_x": round(met.audio_s / wall, 2) if wall else 0,
-            "gpu_busy_frac": round(met.gpu_s / wall, 3) if wall else 0, "batches": met.batches}
+            "steady_rate_x": round(s_audio / s_wall, 2) if s_wall else 0,
+            "model_rate_x": round(passes * s_audio / s_wall, 2) if s_wall else 0,
+            "batches": met.batches}
 
 
 if __name__ == "__main__":

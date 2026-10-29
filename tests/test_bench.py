@@ -1,0 +1,59 @@
+"""Bench helpers: knee detection, lane output parsing, durations, report generation."""
+from __future__ import annotations
+
+import json
+
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+from remixer.bench.cli import parse_duration
+from remixer.bench.report import summarize, write_peak_report
+from remixer.bench.stress import Lanes, Step, knee, last_json
+
+
+def st(level, thr, ok=True):
+    return Step(phase="ramp:gpu", lane="gpu", level=level, config={}, seconds=60, tag="", ok=ok, throughput=thr)
+
+
+def test_knee_is_last_level_with_real_gain():
+    assert knee([st(.25, 10), st(.5, 18), st(.75, 18.3), st(1, 18.1)]).level == .5
+    assert knee([st(.25, 10), st(.5, 20), st(.75, 30), st(1, 40)]).level == 1
+    assert knee([st(.25, 10), st(.5, 20), st(.75, 0, ok=False), st(1, 99)]).level == .5
+    assert knee([st(.25, 0, ok=False)]) is None
+
+
+def test_last_json_single_and_indented():
+    assert last_json('log\n{"a": 1}\n{"b": 2}\n') == {"b": 2}
+    assert last_json('noise\n{\n  "results": [\n    1\n  ]\n}\n') == {"results": [1]}
+
+
+def test_parse_lane_results():
+    assert Lanes.parse("gpu", {"steady_rate_x": 60.5, "rate_x": 20}) == (60.5, "audio-s/s")
+    assert Lanes.parse("cpu", {"audio_seconds_per_second": 12.0})[0] == 12.0
+    assert Lanes.parse("npu", {"results": [{"inferences_per_second": 5}, {"inferences_per_second": 7}]})[0] == 12
+
+
+def test_parse_duration():
+    assert parse_duration("60m") == 3600 and parse_duration("90s") == 90 and parse_duration("2") == 2
+
+
+def test_report_from_synthetic_run(tmp_path, monkeypatch):
+    import remixer.bench.report as rep
+
+    monkeypatch.setattr(rep, "REPO", tmp_path)
+    run = tmp_path / "reports" / "peak" / "20260101-000000"
+    (run / "telemetry").mkdir(parents=True)
+    pq.write_table(pa.table({"ts": [float(i) for i in range(100)], "tag": ["sustain@100"] * 100,
+                             "gpu_util": [95.0] * 100, "cpu_util": [92.0] * 100, "gpu_temp_c": [85.0] * 100,
+                             "gpu_throttle_names": ["sw_thermal", ""] * 50}), run / "telemetry" / "p.parquet")
+    (run / "meta.json").write_text(json.dumps({"ts": "20260101-000000", "lanes": ["gpu"], "mode": "unleashed",
+                                               "sustain_s": 90, "power_plan": "x (Balanced)"}))
+    (run / "steps.json").write_text(json.dumps([{"phase": "sustain", "lane": "gpu", "level": 1.0, "config": {"batch": 10},
+                                                 "seconds": 90, "tag": "sustain@100", "t_start": 0, "t_end": 99,
+                                                 "ok": True, "throughput": 60.0, "unit": "audio-s/s", "result": {},
+                                                 "error": ""}]))
+    s = summarize(run)
+    assert s["steps"][0]["telemetry"]["gpu_util_mean"] == 95.0
+    assert abs(s["steps"][0]["telemetry"]["throttle_sw_thermal_frac"] - 0.5) < 0.02
+    text = write_peak_report([s]).read_text()
+    assert "| gpu | Demucs separation |" in text and "sw_thermal 5" in text

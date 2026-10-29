@@ -29,7 +29,7 @@ def cmd_separate(args) -> None:
     sep = Separator(a, model=args.model, heavy=args.heavy, shifts=args.shifts, batch=args.batch,
                     feeders=args.feeders)
     guard = get_guard(a.profile.data_dir, a.profile.mode)
-    if args.heavy:
+    if args.heavy or args.corpus_cycle:
         met = sep.run(sep.corpus_cycle(), persist=False, duration_s=args.duration, guard=guard)
     else:
         met = sep.run(sep.leased(limit=args.limit), persist=True, duration_s=args.duration, guard=guard)
@@ -60,4 +60,6 @@ def register(sub) -> None:
     p.add_argument("--limit", type=int, help="max tracks")
     p.add_argument("--duration", type=float, help="stop after N seconds")
     p.add_argument("--loop", action="store_true", help="after the queue drains, keep the GPU busy in heavy mode")
+    p.add_argument("--corpus-cycle", action="store_true",
+                   help="benchmark: cycle the catalog without writing stems or touching the queue")
     p.set_defaults(fn=cmd_separate)

@@ -7,7 +7,9 @@ GPU 90 C / CPU 100 C, hard pause at GPU 95 C / CPU 105 C.
 """
 from __future__ import annotations
 
+import json
 import logging
+import os
 import shutil
 import time
 from dataclasses import dataclass, field
@@ -139,8 +141,16 @@ class Guard:
                 action, reasons = "reduce", reasons + [f"{name} {temp:.0f} C >= {red} C"]
         d = Decision(action, reasons, r)
         if action != "ok":
-            self.interventions.append({"t": time.time(), "action": action, "reasons": reasons})
+            entry = {"t": time.time(), "mode": self.mode, "action": action, "reasons": reasons, "pid": os.getpid()}
+            self.interventions.append(entry)
             log.warning("guard %s: %s", action, "; ".join(reasons))
+            try:  # the peak report counts these
+                state = self.data_dir / "state"
+                state.mkdir(parents=True, exist_ok=True)
+                with open(state / "guard_interventions.jsonl", "a", encoding="utf-8") as f:
+                    f.write(json.dumps(entry) + "\n")
+            except OSError:
+                pass
         elif time.time() - self._last_log >= self.log_every_s:
             self._last_log = time.time()
             log.info("guard ok (%s): gpu %s C cpu %s C battery=%s throttle=%s disk %.0f GB",

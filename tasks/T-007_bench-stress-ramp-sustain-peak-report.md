@@ -1,14 +1,14 @@
 ---
 id: T-007
 title: bench stress ramp + sustain + peak report
-status: todo
+status: in_progress
 owner: opus-cc
 branch: dev
 lane: none
 depends_on: [T-004, T-006]
 owns_paths: [src/remixer/bench/, docs/PEAK_REPORT.md, reports/peak/]
-claimed_at:
-heartbeat_at:
+claimed_at: 2026-10-29T03:50:28Z
+heartbeat_at: 2026-10-29T03:50:28Z
 priority: P0
 ---
 
@@ -23,3 +23,4 @@ Report contains per-stage peak throughput, per-engine utilization, VRAM/RAM maxi
 ## Progress and handoff log
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner opus-cc)
+- 2026-10-29T03:50:28Z opus-cc: claimed
