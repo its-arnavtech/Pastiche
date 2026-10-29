@@ -3,7 +3,7 @@ ts: 2026-10-29T14:13:54Z
 agent: gpt-sol
 branch: dev
 type: bench
-tasks: [T-008, T-009, T-010, T-011, T-012, T-013, T-022]
+tasks: [T-008, T-009, T-010, T-011, T-012, T-013, T-030]
 files: [docs/reports/cpu-lane.md, docs/reports/cpu-lane-scaling.png, docs/decisions/0007-track-harmony-and-arrangement-variety.md, tools/corpus/report.py, tools/corpus/refine_track_estimates.py, tools/corpus/upgrade_bass_features.py, src/remixer/cpu/analyze.py, src/remixer/cpu/cli.py, tests/cpu/test_analyze.py]
 ---
 

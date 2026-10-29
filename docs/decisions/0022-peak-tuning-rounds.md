@@ -1,4 +1,4 @@
-# 0018 Peak tuning rounds: 15-minute sustains, per-pass GPU unit
+# 0022 Peak tuning rounds: 15-minute sustains, per-pass GPU unit
 
 - Context: round 1 (ramp + 60-minute sustain, all lanes) finished. Under the full combined sustain the CPU render lane fell from ~12.5 (90 s combined step) to 2.4 rendered audio-s/s and the NPU lane from ~76k to 14k inferences/s, while the GPU held 94 % utilization. The GPU sustain step runs the heavy generator (htdemucs_ft, 2 shifts = 8 model passes per audio second), so its raw audio-s/s was not comparable with the light ramp steps.
 - Decision:

@@ -208,7 +208,7 @@ def make_report(data: Path, output: Path):
               "runs power/mel/log calculations in FP32; a new embedding/cache/index version isolates old artifacts. "
               "A real CPU CLAP forward produced finite features and a finite 512-dimensional embedding "
               "(data/verification/clap-fp32.json). The coordinator must restart embedding and retrain before the "
-              "production checkpoint can be used. Recovery is tracked in T-022. Old artifacts are retained.", "",
+              "production checkpoint can be used. Recovery is tracked in T-030. Old artifacts are retained.", "",
               "Trained OpenVINO export and synth fitness adapters preserve the trainer's exact GELU, biases, "
               "sigmoid and CLAP version. Fixture tests compare NumPy/OpenVINO predictions with PyTorch. "
               "Automatic selection warns and retains the labeled random/heuristic backend when weights are "

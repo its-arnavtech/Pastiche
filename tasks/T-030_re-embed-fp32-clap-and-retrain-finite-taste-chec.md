@@ -1,5 +1,5 @@
 ---
-id: T-022
+id: T-030
 title: Re-embed FP32 CLAP and retrain finite taste checkpoint
 status: todo
 owner: opus-cc
@@ -23,3 +23,4 @@ New-version embedding checkpoints and trained arrays are finite; trained metadat
 ## Progress and handoff log
 
 - 2026-10-29T14:13:28Z gpt-sol: created
+- 2026-10-29T14:20:52Z opus-cc: renumbered from T-022 at the PR #2/#3 merge (PR #2 already uses T-022..T-026); see decision 0023.
