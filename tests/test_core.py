@@ -184,3 +184,34 @@ def test_cli_info(data_dir):
                        env={**os.environ, "REMIXER_DATA_DIR": str(data_dir)})
     assert r.returncode == 0, r.stderr
     assert '"project": "StemDNA"' in r.stdout
+
+
+def test_core_plan_splits_meteor_lake_topology_into_disjoint_lane_sets():
+    from remixer.adapters.local_compute import core_plan
+    from remixer.config import Resources
+
+    # Core Ultra 9 185H as Windows reports it: P-cores 0-1 and 10-19 (HT pairs), E 2-9, LP-E 20-21
+    rows = [{"group": 0, "logical_processor": i, "core_index": (i if i < 10 or i > 19 else i - (i % 2)),
+             "efficiency_class": 1 if (i < 2 or 10 <= i <= 19) else 0} for i in range(22)]
+    rows[1]["core_index"] = 0
+    plan = core_plan(Resources(logical_cores=22, physical_cores=16, reserve=1, gpu_feeders=4, npu_host_threads=1),
+                     {"rows": rows, "reason": None})
+    assert plan == {"gpu": [0, 1, 2, 3, 4, 5], "cpu": [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+                    "npu": [20], "reserve": [21]}
+    assert core_plan(Resources(logical_cores=8, physical_cores=8), {"rows": [], "reason": "no CPU sets"}) == {}
+
+
+def test_pin_from_env_applies_and_ignores_missing(monkeypatch):
+    import psutil
+
+    from remixer.adapters.local_compute import AFFINITY_ENV, pin_from_env
+
+    monkeypatch.delenv(AFFINITY_ENV, raising=False)
+    assert pin_from_env() is None
+    before = psutil.Process().cpu_affinity()
+    try:
+        monkeypatch.setenv(AFFINITY_ENV, ",".join(map(str, before[:2])))
+        assert pin_from_env() == before[:2]
+        assert psutil.Process().cpu_affinity() == before[:2]
+    finally:
+        psutil.Process().cpu_affinity(before)

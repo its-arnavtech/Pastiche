@@ -24,6 +24,7 @@ from typing import Any, Iterable, Iterator
 
 log = logging.getLogger("remixer.gpu.separate")
 OVERLAP = 0.25
+STARVED_UTIL = 80  # percent; below this with an empty feeder queue counts as starvation
 
 
 def model_version(name: str) -> str:
@@ -259,6 +260,21 @@ class Separator:
             for r in rows:
                 yield r, Path(r["source_path"])
 
+    def _check_starvation(self, row: dict, empty_s: float) -> None:
+        """Starvation = GPU below 80 % utilization while the feeder queue ran empty in this window."""
+        h = getattr(self.a.compute, "_h", None)
+        try:
+            import pynvml
+
+            row["gpu_util"] = pynvml.nvmlDeviceGetUtilizationRates(h).gpu if h is not None else None
+        except Exception:  # NVML reads fail transiently on Optimus laptops
+            row["gpu_util"] = None
+        if row["gpu_util"] is not None and row["gpu_util"] < STARVED_UTIL and empty_s > 0:
+            log.warning("starvation: GPU %d%% while feeders left the queue empty for %.2fs of %.1fs",
+                        row["gpu_util"], empty_s, row["wall_s"])
+            self.a.events.append("gpu_starvation", [{"ts": row["ts"], "stage": row["stage"], "gpu_util": row["gpu_util"],
+                                                      "feeder_empty_s": round(empty_s, 3), "window_s": row["wall_s"]}])
+
     # ---- main loop
     def run(self, items: Iterable[tuple[Any, Path]], persist: bool, duration_s: float | None = None,
             metrics_every_s: float = 5.0, guard=None) -> Metrics:
@@ -281,7 +297,7 @@ class Separator:
         tracks = iter(pre)
         pending: deque = deque()
         t_start = time.perf_counter()
-        last_guard = 0.0
+        last_guard = last_empty = 0.0
         exhausted = False
         try:
             while True:
@@ -329,7 +345,10 @@ class Separator:
                 met.add(len(batch) * S / R.sr, time.perf_counter() - t)
                 self._drain(done_q, met)
                 if row := met.maybe_emit(metrics_every_s, batch=B, prefetch_wait_s=round(pre.stats["wait_s"], 2),
+                                         feeder_empty_s=round(pre.stats["empty_s"], 2),
                                          passes=R.passes_per_batch, model=R.version, write_mb=writer.bytes / 1e6):
+                    self._check_starvation(row, pre.stats["empty_s"] - last_empty)
+                    last_empty = pre.stats["empty_s"]
                     self.a.events.append("stage_metrics", [row])
         finally:
             pre.close()

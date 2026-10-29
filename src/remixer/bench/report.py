@@ -27,11 +27,16 @@ def _agg(v, how):
                         "p50": np.median, "p05": lambda x: np.percentile(x, 5)}[how](v)), 2)
 
 
-def window_stats(t, mask) -> dict:
+def window_stats(t, mask, plan: dict | None = None) -> dict:
     sub = t.filter(mask) if mask is not None else t
     if sub.num_rows == 0:
         return {"samples": 0}
     out = {"samples": sub.num_rows}
+    for lane, cores in (plan or {}).items():  # utilization of each lane's own pinned CPUs
+        cols = [_col(sub, f"cpu_{c:02d}") for c in cores]
+        cols = [c for c in cols if c is not None]
+        if cols:
+            out[f"{lane}_cores_util_mean"] = _agg(np.nanmean(np.vstack(cols), axis=0), "mean")
     for name, hows in {"gpu_util": ("mean", "p50", "p05"), "cpu_util": ("mean", "p50", "p05"),
                        "igpu": ("mean", "max"), "npu": ("mean", "max"), "vram_used_gib": ("max",),
                        "ram_used_gib": ("max",), "swap_used_gib": ("max",), "gpu_temp_c": ("mean", "max"),
@@ -108,6 +113,25 @@ def charts(t, steps, out: Path) -> list[str]:
     return files
 
 
+def starvation(t0: float, t1: float) -> list[dict]:
+    """gpu_starvation events (GPU < 80 % with an empty feeder queue) logged by the GPU lane in [t0, t1]."""
+    from remixer.adapters import build
+
+    try:
+        rows = build().events.read("gpu_starvation")
+    except Exception:
+        return []
+    return [r for r in rows if t0 <= float(r.get("ts", 0)) <= t1]
+
+
+def passes(tel: dict) -> bool | None:
+    """Brief's pass condition: GPU > 90 % while the CPU lane's own cores stay near saturation (>= 90 %)."""
+    g, c = tel.get("gpu_util_mean"), tel.get("cpu_cores_util_mean")
+    if g is None or c is None:
+        return None
+    return g > 90 and c >= 90
+
+
 def summarize(run: Path) -> dict:
     from remixer.telemetry.sampler import load
 
@@ -122,8 +146,10 @@ def summarize(run: Path) -> dict:
             # lanes start (model load, compile) before their timed `seconds`; measure the timed tail only
             lo = max(s["t_start"], s["t_end"] - s["seconds"]) + min(10, s["seconds"] * 0.1)
             mask = pc.and_(pc.greater_equal(t["ts"], lo), pc.less_equal(t["ts"], s["t_end"] - 1))
-            s["telemetry"] = window_stats(t, mask)
-    overall = window_stats(t, None) if t.num_rows else {}
+            s["telemetry"] = window_stats(t, mask, meta.get("core_plan"))
+            if s["lane"] == "gpu":
+                s["telemetry"]["starvation_events"] = len(starvation(lo, s["t_end"]))
+    overall = window_stats(t, None, meta.get("core_plan")) if t.num_rows else {}
     guard = []
     gfile = REPO / "data" / "state" / "guard_interventions.jsonl"
     if gfile.exists() and steps:

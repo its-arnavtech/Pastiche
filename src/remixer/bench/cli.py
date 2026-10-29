@@ -43,6 +43,7 @@ def register(sub) -> None:
                    help="sustain GPU work: queue then heavy (loop), corpus cycle, or heavy only")
     s.add_argument("--wait-locks", type=parse_duration, default=0.0, help="wait this long for held locks")
     s.add_argument("--owner", default="opus-cc")
+    s.add_argument("--no-pin", action="store_true", help="OS scheduling instead of per-lane core sets (decision 0024)")
     s.add_argument("--label", default="")
     s.add_argument("--out")
     s.set_defaults(fn=cmd_stress)

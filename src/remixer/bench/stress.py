@@ -21,6 +21,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable
 
+from remixer.adapters.local_compute import AFFINITY_ENV
+
 log = logging.getLogger("remixer.bench")
 LEVELS = (0.25, 0.5, 0.75, 1.0)
 KNEE_GAIN = 0.03
@@ -61,10 +63,11 @@ def last_json(text: str) -> dict:
 class Lanes:
     """Command builders and result parsers for each lane. Budgets from config/resources.yaml."""
 
-    def __init__(self, profile, out: Path, gpu_batch_max: int):
+    def __init__(self, profile, out: Path, gpu_batch_max: int, plan: dict[str, list[int]] | None = None):
         self.p = profile
         self.out = out
         self.gpu_batch_max = gpu_batch_max
+        self.plan = plan or {}  # lane -> pinned logical CPUs (decision 0024); {} = OS scheduling
         self.cpu_max = profile.resources.cpu_workers
         # The CPU lane owns this measured recommendation; resource budgets still
         # cap it, and absent/incomplete tuning leaves the configured ramp intact.
@@ -73,6 +76,13 @@ class Lanes:
             self.cpu_max = min(self.cpu_max, max(1, int(tuning["best"]["render"]["workers"])))
         except (OSError, ValueError, KeyError, TypeError):
             pass
+        if self.plan.get("cpu"):
+            self.cpu_max = len(self.plan["cpu"])  # one render worker per CPU-lane logical CPU at 100 %
+
+    def _pin(self, lane: str, cfg: dict) -> dict:
+        if self.plan.get(lane):
+            cfg["cores"] = self.plan[lane]
+        return cfg
 
     def gpu(self, level: float, seconds: float, mode: str = "cycle") -> tuple[list[str], dict]:
         batch = max(1, round(level * self.gpu_batch_max))
@@ -83,19 +93,19 @@ class Lanes:
             args.append("--loop")
         elif mode == "heavy":
             args.append("--heavy")
-        return args, {"batch": batch, "mode": mode}
+        return args, self._pin("gpu", {"batch": batch, "mode": mode})
 
     def cpu(self, level: float, seconds: float) -> tuple[list[str], dict]:
         workers = max(1, round(level * self.cpu_max))
         dest = self.out / "lanes" / f"render-w{workers}-{int(time.time())}"
         return ["render", "--output", str(dest), "--seconds", str(seconds), "--workers", str(workers)], \
-            {"workers": workers, "stage": "render"}
+            self._pin("cpu", {"workers": workers, "stage": "render"})
 
     def npu(self, level: float, seconds: float) -> tuple[list[str], dict]:
         devices = ["NPU"] if level < 0.75 else ["NPU", "GPU.0"]
         dest = self.out / "lanes" / f"npu-{'-'.join(d.replace('.', '') for d in devices)}-{int(time.time())}"
         return ["npu", "--output", str(dest), "--seconds", str(seconds), "--devices", *devices, "--parallel"], \
-            {"devices": devices}
+            self._pin("npu", {"devices": devices})
 
     @staticmethod
     def parse(lane: str, res: dict) -> tuple[float, str]:
@@ -117,10 +127,14 @@ def run_lanes(specs: list[tuple[str, list[str], dict]], seconds: float, log_dir:
     log_dir.mkdir(parents=True, exist_ok=True)
     procs = {}
     env = {**os.environ, "PYTHONUNBUFFERED": "1", "HF_HUB_DISABLE_SYMLINKS_WARNING": "1"}
-    for lane, args, _ in specs:
+    for lane, args, cfg in specs:
         f = open(log_dir / f"{lane}-{int(time.time())}.log", "w", encoding="utf-8")
+        lane_env = dict(env)
+        lane_env.pop(AFFINITY_ENV, None)
+        if cfg.get("cores"):
+            lane_env[AFFINITY_ENV] = ",".join(map(str, cfg["cores"]))
         p = subprocess.Popen([sys.executable, "-m", "remixer.cli", *args], stdout=f, stderr=subprocess.STDOUT,
-                             env=env, cwd=Path(__file__).resolve().parents[3])
+                             env=lane_env, cwd=Path(__file__).resolve().parents[3])
         procs[lane] = (p, f)
     out = {}
     deadline = time.time() + seconds + grace_s
@@ -150,7 +164,8 @@ def knee(steps: list[Step]) -> Step | None:
 
 
 class Bench:
-    def __init__(self, adapters, out: Path, step_seconds: float, lanes: tuple[str, ...], owner: str = "opus-cc"):
+    def __init__(self, adapters, out: Path, step_seconds: float, lanes: tuple[str, ...], owner: str = "opus-cc",
+                 pin: bool = True):
         self.a = adapters
         self.out = out
         self.step_seconds = step_seconds
@@ -161,7 +176,7 @@ class Bench:
         from remixer.telemetry.sampler import Sampler
 
         self.sampler = Sampler(out / "telemetry", interval_s=adapters.profile["telemetry"]["interval_s"])
-        self.lanes = Lanes(adapters.profile, out, self._gpu_batch_max())
+        self.lanes = Lanes(adapters.profile, out, self._gpu_batch_max(), adapters.compute.core_plan() if pin else {})
 
     def _gpu_batch_max(self) -> int:
         try:
@@ -293,12 +308,12 @@ def run(args) -> Path:
     got = acquire_locks(lanes, args.owner, total_min, f"bench stress {ts}", args.wait_locks)
     if not got:
         raise SystemExit("no lane locks available")
-    b = Bench(a, out, args.step_seconds, got, owner=args.owner)
+    b = Bench(a, out, args.step_seconds, got, owner=args.owner, pin=not getattr(args, "no_pin", False))
     meta = {"ts": ts, "lanes": got, "requested_lanes": lanes, "step_seconds": args.step_seconds,
             "sustain_s": args.sustain, "mode": a.profile.mode, "power_plan": power_plan(),
             "resources": {"logical": a.profile.resources.logical_cores, "cpu_workers": a.profile.resources.cpu_workers,
                           "gpu_feeders": a.profile.resources.gpu_feeders, "reserve": a.profile.resources.reserve},
-            "gpu_batch_max": b.lanes.gpu_batch_max, "label": args.label}
+            "gpu_batch_max": b.lanes.gpu_batch_max, "label": args.label, "core_plan": b.lanes.plan}
     (out / "meta.json").write_text(json.dumps(meta, indent=2))
     b.sampler.start()
     ramp = None
@@ -325,11 +340,25 @@ def run(args) -> Path:
     return write_report(out)
 
 
+POWER_OVERLAYS = {"961cc777-2547-4f9d-8174-7d86181b8a7a": "best power efficiency",
+                  "3af9b8d9-7c97-431d-ad78-34a8bfea439f": "better performance",
+                  "ded574b5-45a0-4f42-8737-46345c09c238": "best performance"}
+
+
 def power_plan() -> str:
     if sys.platform != "win32":
         return "n/a"
     try:
-        return subprocess.run(["powercfg", "/getactivescheme"], capture_output=True, text=True,
-                              timeout=10).stdout.strip()
+        scheme = subprocess.run(["powercfg", "/getactivescheme"], capture_output=True, text=True,
+                                timeout=10).stdout.strip()
     except Exception:
-        return "unknown"
+        scheme = "unknown"
+    try:  # the Settings power-mode slider is an overlay on the scheme; read it, never write it
+        import winreg
+
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes") as k:
+            ac = winreg.QueryValueEx(k, "ActiveOverlayAcPowerScheme")[0]
+        scheme += f"; AC power mode overlay: {POWER_OVERLAYS.get(ac.lower(), ac or 'balanced (none)')}"
+    except OSError:
+        pass
+    return scheme

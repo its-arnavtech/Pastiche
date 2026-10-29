@@ -59,7 +59,7 @@ class Prefetcher:
         self.pin = pin
         self.q: queue.Queue = queue.Queue(maxsize=max(1, depth))
         self.pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="feeder")
-        self.stats = {"decoded": 0, "errors": 0, "wait_s": 0.0}
+        self.stats = {"decoded": 0, "errors": 0, "wait_s": 0.0, "empty_s": 0.0}
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name="prefetch", daemon=True)
         self._thread.start()
@@ -106,9 +106,11 @@ class Prefetcher:
         import time
 
         while True:
-            t = time.perf_counter()
+            t, empty = time.perf_counter(), self.q.empty()
             x = self.q.get()
             self.stats["wait_s"] += time.perf_counter() - t
+            if empty:  # the GPU asked for work and the feeders had none ready
+                self.stats["empty_s"] += time.perf_counter() - t
             if x is None:
                 return
             yield x

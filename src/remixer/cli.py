@@ -94,6 +94,10 @@ def main(argv: list[str] | None = None) -> None:
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if args.safe:
         os.environ["REMIXER_SAFE"] = "1"
+    from remixer.adapters.local_compute import pin_from_env
+
+    if cores := pin_from_env():  # set per lane by `bench stress`; worker processes inherit the mask
+        logging.getLogger("remixer").info("pinned to logical CPUs %s", cores)
     sys.exit(args.fn(args) or 0)
 
 
