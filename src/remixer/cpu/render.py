@@ -15,7 +15,7 @@ import pyloudnorm as pyln
 from scipy import signal
 import soundfile as sf
 
-from remixer.corpus.generate import atomic_json, file_hash
+from remixer.corpus.generate import atomic_json, atomic_replace, file_hash
 from .assemble import Recipe, assemble
 from .runtime import LaneMonitor, configured_workers, guarded, process_pool
 
@@ -24,6 +24,10 @@ VERSION = "rubberband-render-v1"
 
 def render(recipe: Recipe, output: str | Path, *, force: bool = False) -> dict:
     output = Path(output)
+    for pick in recipe.stems:
+        source = Path(pick.path)
+        if output.resolve() == source.resolve() or (output.exists() and source.exists() and output.samefile(source)):
+            raise ValueError("render output must never overwrite source audio")
     guarded(output.parent)
     checkpoint = output.with_suffix(".json")
     if checkpoint.exists() and output.exists() and not force:
@@ -87,7 +91,7 @@ def render(recipe: Recipe, output: str | Path, *, force: bool = False) -> dict:
         mix *= .98 / peak
     temp = output.with_suffix(f".{os.getpid()}.partial.wav")
     sf.write(temp, np.rint(mix * 32767).astype(np.int16), recipe.sample_rate, subtype="PCM_16")
-    temp.replace(output)
+    atomic_replace(temp, output)
     row = {"recipe_id": recipe.identity, "version": VERSION, "sha256": file_hash(output),
            "duration_seconds": frames / recipe.sample_rate, "synthetic": recipe.synthetic,
            "augmented": recipe.augmented, "recipe": recipe.to_dict()}
@@ -108,8 +112,13 @@ def render_storm(corpus: Path, destination: Path, seconds: float = 600, workers:
     rows = pq.read_table(corpus / "manifest.parquet").to_pylist()
     workers = configured_workers(workers)
     destination.mkdir(parents=True, exist_ok=True)
-    started, completed, audio_seconds = time.perf_counter(), 0, 0.0
+    completed, audio_seconds = 0, 0.0
     with LaneMonitor() as monitor, process_pool(workers) as pool:
+        warm = [pool.submit(_render_job, (assemble(rows, seed + slot, duration, bpm=123),
+                                         destination / f"slot-{slot}.wav")) for slot in range(workers)]
+        for future in warm:
+            future.result()
+        started, started_wall_time = time.perf_counter(), time.time()
         pending, sequence = {}, 0
         while time.perf_counter() - started < seconds or pending:
             while time.perf_counter() - started < seconds and len(pending) < workers:
@@ -131,6 +140,7 @@ def render_storm(corpus: Path, destination: Path, seconds: float = 600, workers:
                 atomic_json(destination / "checkpoint.json", {"completed": completed, "last_recipe_id": row["recipe_id"]})
     elapsed = time.perf_counter() - started
     result = {"stage": "render", "workers": workers, "wall_seconds": elapsed, "renders": completed,
+              "timing_started_wall_time": started_wall_time, "timing_ended_wall_time": time.time(),
               "renders_per_minute": completed * 60 / elapsed, "audio_seconds_per_second": audio_seconds / elapsed,
               **monitor.summary()}
     atomic_json(destination / "benchmark.json", result)

@@ -21,6 +21,8 @@ import soundfile as sf
 VERSION = "procedural-v1"
 STEMS = ("drums", "bass", "vocals", "other")
 KEY_NAMES = ("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+PROGRESSIONS = ((0, 5, 3, 4), (0, 3, 4, 0), (5, 3, 0, 4), (0, 4, 5, 3),
+                (1, 4, 0, 5), (0, 2, 3, 4), (0, 3, 1, 4), (0, 5, 1, 4))
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,7 @@ class TrackSpec:
     bpm: int | None = None
     tonic: int | None = None
     minor: bool | None = None
+    arrangement: int | None = None
 
     def resolved(self) -> dict:
         if self.duration <= 0 or self.sample_rate < 2000:
@@ -41,7 +44,12 @@ class TrackSpec:
         minor = bool(self.minor if self.minor is not None else rng.integers(2))
         if not 30 <= bpm <= 300 or not 0 <= tonic < 12:
             raise ValueError("invalid BPM or tonic")
-        return {**asdict(self), "bpm": bpm, "tonic": tonic, "minor": minor}
+        result = {**asdict(self), "bpm": bpm, "tonic": tonic, "minor": minor}
+        if self.arrangement is None:
+            result.pop("arrangement")  # Preserve original identities and audio.
+        elif not 0 <= self.arrangement < 8:
+            raise ValueError("arrangement must be in 0..7")
+        return result
 
 
 def file_hash(path: Path) -> str:
@@ -56,7 +64,19 @@ def atomic_json(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(f".{os.getpid()}.tmp")
     temp.write_text(json.dumps(value, sort_keys=True, indent=2), encoding="utf-8")
-    temp.replace(path)
+    atomic_replace(temp, path)
+
+
+def atomic_replace(source: Path, destination: Path) -> None:
+    """Windows readers/antivirus can briefly deny delete sharing on replace."""
+    for attempt in range(40):
+        try:
+            source.replace(destination)
+            return
+        except PermissionError:
+            if attempt == 39:
+                raise
+            time.sleep(min(.025 * 2**min(attempt, 4), .25))
 
 
 def _stereo(signal: np.ndarray, pan: float = 0.0) -> np.ndarray:
@@ -82,7 +102,7 @@ def synth_block(spec: dict, start: int, count: int) -> dict[str, np.ndarray]:
     hats = (noise - previous_noise) * np.exp(-hat_phase * 130) * .1
     # Diatonic progression: tonic, submediant, subdominant, dominant.
     scale = np.array([0, 2, 3, 5, 7, 8, 10] if spec["minor"] else [0, 2, 4, 5, 7, 9, 11])
-    progression = np.array([0, 5, 3, 4])
+    progression = np.array(PROGRESSIONS[spec.get("arrangement", 0)])
     degree = progression[(beat.astype(np.int64) // 16) % 4]
     root = 36 + spec["tonic"] + scale[degree]
     # Analytic phase resets on notes avoid cumulative integration across blocks.
@@ -99,6 +119,17 @@ def synth_block(spec: dict, start: int, count: int) -> dict[str, np.ndarray]:
     local = np.mod(beat * 2, 1) * 30 / bpm
     envelope = (1 - np.exp(-local * 150)) * np.exp(-local * 9)
     lead = (np.sin(2 * np.pi * frequency * local) + .25 * np.sin(4 * np.pi * frequency * local)) * envelope * .12
+    if "arrangement" in spec:
+        style = spec["arrangement"] % 4
+        kick_patterns = ((1, 0, 1, 0, 1, 0, 1, 0), (1, 0, 0, 1, 1, 0, 1, 0),
+                         (1, 0, 0, 0, 1, 0, 0, 0), (1, 0, 1, 1, 1, 0, 1, 1))
+        half_phase = np.mod(beat * 2, 1) * 30 / bpm
+        kick = (np.sin(2 * np.pi * (48 * half_phase + 55 * .025 * (1 - np.exp(-half_phase / .025))))
+                * np.exp(-half_phase * 22) * np.asarray(kick_patterns[style])[note_index % 8])
+        hats *= np.where(note_index % 2 == 0, 1, .55 + .1 * (seed % 4))
+        lead *= np.where((note_index + seed) % (5 + style) == 0, 0, 1)
+        if style == 2:
+            snare *= (beat.astype(int) % 4 == 3)
     fade = np.minimum(1, np.minimum(t * 10, (spec["duration"] - t) * 5)).clip(0, 1)
     return {"drums": _stereo((kick * .22 + snare + hats) * fade),
             "bass": _stereo(bass * fade), "vocals": _stereo(lead * fade, -.35),
@@ -107,7 +138,8 @@ def synth_block(spec: dict, start: int, count: int) -> dict[str, np.ndarray]:
 
 def generate_track(spec: TrackSpec, destination: str | Path, block_size: int = 65536, *, force: bool = False) -> dict:
     values = spec.resolved()
-    identity = hashlib.sha256((VERSION + json.dumps(values, sort_keys=True)).encode()).hexdigest()
+    version = VERSION if spec.arrangement is None else "procedural-v2"
+    identity = hashlib.sha256((version + json.dumps(values, sort_keys=True)).encode()).hexdigest()
     directory = Path(destination) / identity
     checkpoint = directory / "track.json"
     if checkpoint.exists() and not force:
@@ -139,13 +171,16 @@ def generate_track(spec: TrackSpec, destination: str | Path, block_size: int = 6
                 writers[name].write(audio)
             writers["mix"].write(mix.astype(np.int16))
     for name, temp in temps.items():
-        temp.replace(paths[name])
-    row = {**values, "track_id": identity, "version": VERSION, "synthetic": True,
+        atomic_replace(temp, paths[name])
+    row = {**values, "track_id": identity, "version": version, "synthetic": True,
            "augmented": False, "real": False,
            "key": KEY_NAMES[values["tonic"]] + (" minor" if values["minor"] else " major"),
            "beat_positions": np.arange(0, spec.duration, 60 / values["bpm"]).tolist(),
            "stem_layout": list(STEMS), "paths": {name: str(path.resolve()) for name, path in paths.items()},
            "hashes": {name: file_hash(path) for name, path in paths.items()}}
+    if spec.arrangement is not None:
+        row.update({"chord_progression_degrees": list(PROGRESSIONS[spec.arrangement]),
+                    "drum_pattern": spec.arrangement % 4})
     atomic_json(checkpoint, row)
     return row
 
@@ -158,7 +193,7 @@ def write_manifest(destination: Path, rows: list[dict]) -> Path:
     path = destination / "manifest.parquet"
     temp = path.with_suffix(".tmp.parquet")
     pq.write_table(pa.Table.from_pylist(sorted(rows, key=lambda row: row["track_id"])), temp)
-    temp.replace(path)
+    atomic_replace(temp, path)
     return path
 
 
@@ -178,7 +213,8 @@ def scan_library(destination: Path, library: Path | None = None) -> int:
 
 
 def generate_corpus(destination: Path, n: int = 500, seed: int = 0, workers: int | None = None,
-                    min_duration: float = 120, max_duration: float = 300, sample_rate: int = 44100) -> dict:
+                    min_duration: float = 120, max_duration: float = 300, sample_rate: int = 44100,
+                    varied: bool = True) -> dict:
     from remixer.cpu.runtime import LaneMonitor, configured_workers, guarded, process_pool
     if n < 1 or min_duration <= 0 or max_duration < min_duration:
         raise ValueError("invalid corpus size or duration range")
@@ -186,8 +222,13 @@ def generate_corpus(destination: Path, n: int = 500, seed: int = 0, workers: int
     destination.mkdir(parents=True, exist_ok=True)
     workers = configured_workers(workers)
     rng = np.random.default_rng(seed)
-    jobs = [(TrackSpec(seed + i, float(rng.uniform(min_duration, max_duration)), sample_rate), destination)
-            for i in range(n)]
+    jobs = []
+    for i in range(n):
+        duration = float(rng.uniform(min_duration, max_duration))
+        # Cycle all arrangements before seeded permutations; even small batches
+        # exercise different harmony, syncopation, note rests and velocities.
+        arrangement = (i + seed) % 8 if varied else None
+        jobs.append((TrackSpec(seed + i, duration, sample_rate, arrangement=arrangement), destination))
     rows, stopped = [], None
     started = time.perf_counter()
     with LaneMonitor() as monitor, process_pool(workers) as pool:
@@ -237,9 +278,11 @@ def main() -> None:
     parser.add_argument("--min-duration", type=float, default=120)
     parser.add_argument("--max-duration", type=float, default=300)
     parser.add_argument("--sample-rate", type=int, default=44100)
+    parser.add_argument("--legacy-arrangement", action="store_true")
     args = parser.parse_args()
     print(json.dumps(generate_corpus(args.output, args.n, args.seed, args.workers,
-                                      args.min_duration, args.max_duration, args.sample_rate), indent=2))
+                                      args.min_duration, args.max_duration, args.sample_rate,
+                                      varied=not args.legacy_arrangement), indent=2))
 
 
 if __name__ == "__main__":

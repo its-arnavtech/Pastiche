@@ -20,6 +20,8 @@ def test_seeded_assembly_and_byte_identical_rubberband(tmp_path):
     b = render(recipe, tmp_path / "b.wav")
     assert a["sha256"] == b["sha256"]
     assert a["duration_seconds"] == pytest.approx(1, abs=.01)
+    with pytest.raises(ValueError, match="overwrite source"):
+        render(recipe, row["paths"]["drums"])
     Path(row["paths"]["drums"]).write_bytes(b"changed source")
     with pytest.raises(ValueError, match="source hash"):
         render(recipe, tmp_path / "c.wav")
@@ -38,3 +40,15 @@ def test_pitch_shift_preserves_duration_and_changes_frequency(tmp_path):
     frequency = np.fft.rfftfreq(len(audio), 1 / sr)[np.argmax(np.abs(np.fft.rfft(audio.mean(axis=1))))]
     assert frequency == pytest.approx(880, abs=5)
     assert result["duration_seconds"] == pytest.approx(2, abs=.01)
+
+
+def test_recipe_provenance_follows_selected_sources(monkeypatch, tmp_path):
+    row = generate_track(TrackSpec(5, duration=1, sample_rate=8000), tmp_path)
+    real = {**row, "synthetic": False, "augmented": True}
+    class PickFirst:
+        def integers(self, *args, **kwargs):
+            return 0
+    monkeypatch.setattr("remixer.cpu.assemble.np.random.default_rng", lambda seed: PickFirst())
+    recipe = assemble([real, row])
+    assert not recipe.synthetic
+    assert recipe.augmented

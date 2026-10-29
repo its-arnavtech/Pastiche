@@ -23,3 +23,13 @@ def test_windows_cpu_set_parser_uses_record_sizes():
     assert rows[0]["logical_processor"] == 0
     assert rows[0]["efficiency_class"] == 8
     assert rows[1]["logical_processor"] == 12
+
+
+def test_stale_machine_config_still_preserves_gpu_and_os_budget(monkeypatch, tmp_path):
+    path = tmp_path / "resources.yaml"
+    path.write_text("cpu_lane:\n  workers: 17\nreserve:\n  logical_cores: 1\ngpu_lane:\n  feeder_cores: 4\n")
+    monkeypatch.setenv("REMIXER_RESOURCES", str(path))
+    monkeypatch.setattr("remixer.cpu.runtime.os.cpu_count", lambda: 8)
+    # An active NPU lock may borrow another host thread; it must never increase
+    # the three-core budget left after four GPU feeders and one OS reserve.
+    assert 1 <= configured_workers() <= 3

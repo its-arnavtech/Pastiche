@@ -106,9 +106,9 @@ def benchmark_device(model: Path, spec: ScorerSpec, device: str, seconds: float,
     # Warm-up excludes compilation, memory allocation and first-use kernels.
     for _ in range(5):
         scorer.score(inputs)
-    started, batches = time.perf_counter(), 0
     with LaneMonitor() as monitor:
-        while time.perf_counter() - started < seconds:
+        started, batches = time.perf_counter(), 0
+        while batches == 0 or time.perf_counter() - started < seconds:
             scorer.score(inputs)
             batches += 1
             if batches % 100 == 0:
@@ -141,6 +141,70 @@ def benchmark(destination: Path, seconds: float = 600, devices: tuple[str, ...] 
         results = [benchmark_device(model, spec, device, seconds, destination) for device in devices]
     result = {"stage": "npu", "available_devices": available, "parallel": parallel,
               "openvino_version": ov.__version__, "results": results}
+    atomic_json(destination / "benchmark.json", result)
+    return result
+
+
+def benchmark_async(destination: Path, seconds: float = 600, devices: tuple[str, ...] = ("NPU", "GPU.0"),
+                    requests: int = 8, spec: ScorerSpec = ScorerSpec(), stop_when=None) -> dict:
+    """One host loop feeds bounded queues on both Intel engines concurrently."""
+    import openvino as ov
+    if seconds <= 0 or requests < 1:
+        raise ValueError("seconds and request count must be positive")
+    destination.mkdir(parents=True, exist_ok=True)
+    model = export_scorer(destination, spec)
+    inputs = np.random.default_rng(17).normal(size=(spec.batch, spec.features)).astype(np.float32)
+    expected = reference_score(inputs, spec)
+    entries = []
+    for device in devices:
+        compile_started = time.perf_counter()
+        scorer = OpenVINOScorer(model, spec, device)
+        error = float(np.max(np.abs(scorer.score(inputs) - expected)))
+        if not np.isfinite(error) or error > .01:
+            raise ValueError(f"device scorer validation error: {error}")
+        queue = ov.AsyncInferQueue(scorer.compiled, requests)
+        queue.start_async({0: inputs}, share_inputs=True)
+        queue.wait_all()
+        entries.append({"scorer": scorer, "queue": queue, "batches": 0,
+                        "compile_seconds": time.perf_counter() - compile_started,
+                        "max_reference_error": error})
+    with LaneMonitor() as monitor:
+        started, checkpoint_at, stop_checked_at = time.perf_counter(), 0.0, -1.0
+        # Start instrumentation outside the timed interval, then guarantee a
+        # real measured request even if this process is descheduled briefly.
+        for entry in entries:
+            entry["queue"].start_async({0: inputs}, share_inputs=True)
+            entry["batches"] += 1
+        while time.perf_counter() - started < seconds:
+            elapsed_now = time.perf_counter() - started
+            if stop_when is not None and elapsed_now - stop_checked_at >= 1:
+                stop_checked_at = elapsed_now
+                if stop_when():
+                    break
+            for entry in entries:
+                if entry["queue"].is_ready():
+                    entry["queue"].start_async({0: inputs}, share_inputs=True)
+                    entry["batches"] += 1
+            if time.perf_counter() - started - checkpoint_at >= 5:
+                guarded(destination)
+                checkpoint_at = time.perf_counter() - started
+                atomic_json(destination / "checkpoint.json", {"elapsed": checkpoint_at,
+                            "batches": {entry["scorer"].requested_device: entry["batches"] for entry in entries}})
+        for entry in entries:
+            entry["queue"].wait_all()
+    elapsed = time.perf_counter() - started
+    rows = []
+    for entry in entries:
+        scorer = entry["scorer"]
+        rows.append({"requested_device": scorer.requested_device, "executed_device": scorer.device,
+                     "full_device_name": str(scorer.core.get_property(scorer.device, "FULL_DEVICE_NAME")),
+                     "fallback_reason": scorer.fallback_reason, "requests": requests,
+                     "batches": entry["batches"], "wall_seconds": elapsed,
+                     "inferences_per_second": entry["batches"] * spec.batch / elapsed,
+                     "max_reference_error": entry["max_reference_error"],
+                     "compile_seconds": entry["compile_seconds"]})
+    result = {"stage": "npu", "mode": "single-host-loop-async", "wall_seconds": elapsed,
+              "results": rows, "synthetic": True, **monitor.summary()}
     atomic_json(destination / "benchmark.json", result)
     return result
 

@@ -19,7 +19,7 @@ import soundfile as sf
 from remixer.corpus.generate import KEY_NAMES, atomic_json, file_hash
 from .runtime import LaneMonitor, configured_workers, guarded, process_pool
 
-VERSION = "analysis-v2"
+VERSION = "analysis-v3"
 MAJOR = np.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
 MINOR = np.array([6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17])
 
@@ -97,7 +97,7 @@ def estimate_tempo(low: np.ndarray, sample_rate: int = 11025) -> tuple[float | N
     half = round(lag / 2)
     if half >= minimum:
         half = max(range(max(minimum, half-1), min(maximum, half+1)+1), key=lambda value: autocorr[value])
-        if autocorr[half] >= .75 * autocorr[lag]:
+        if autocorr[half] >= .35 * autocorr[lag]:
             lag = half
     # Parabolic peak interpolation removes hop quantization error.
     a, b, c = autocorr[lag-1:lag+2]
@@ -112,13 +112,80 @@ def estimate_tempo(low: np.ndarray, sample_rate: int = 11025) -> tuple[float | N
     return float(bpm), np.arange(offset, len(low) / sample_rate, period).tolist()
 
 
-def analyze_file(path: str | Path, output: Path | None = None, *, force: bool = False) -> dict:
+def tempo_from_file(path: Path) -> tuple[float | None, list[float]]:
+    """Tempo-only upgrade: same bounded resampling as the full feature path."""
+    info = sf.info(path)
+    divisor = math.gcd(info.samplerate, 11025)
+    lows = []
+    for audio in sf.blocks(path, blocksize=info.samplerate * 5, dtype="float64", always_2d=True):
+        low = signal.resample_poly(audio.mean(axis=1), 11025 // divisor, info.samplerate // divisor)
+        if len(low) < 4096:
+            low = np.pad(low, (0, 4096 - len(low)))
+        lows.append(low)
+    return estimate_tempo(np.concatenate(lows)) if lows else (None, [])
+
+
+def upgrade_tempo(path: Path, features: dict, *, verify_hash: bool = True) -> dict:
+    """Only unresolved low tempi can change under the revised half-lag rule."""
+    if features.get("version") == VERSION:
+        return features
+    if features.get("version") != "analysis-v2":
+        raise ValueError("only compatible analysis-v2 features can be upgraded")
+    if features.get("bpm") is not None and features["bpm"] <= 95:
+        if verify_hash and file_hash(path) != features["source_hash"]:
+            raise ValueError("source changed since analysis; recompute full features")
+        features = {**features, "bpm": None, "beat_positions": []}
+        features["bpm"], features["beat_positions"] = tempo_from_file(path)
+    return {**features, "version": VERSION, "upgraded_from": "analysis-v2"}
+
+
+def combine_stem_features(features: dict[str, dict]) -> dict:
+    """Harmonic accompaniment identifies key; percussion identifies pulse.
+
+    No ground-truth labels enter this function. Retain mix-only estimates for
+    evaluation: monophonic bass and percussion cannot reliably identify mode.
+    """
+    key_source = next((name for name in ("other", "mix", "vocals", "bass")
+                       if features.get(name, {}).get("key") is not None), None)
+    tempo_source = next((name for name in ("drums", "mix", "bass", "vocals")
+                         if features.get(name, {}).get("bpm") is not None), None)
+    synthetic = True if any(value.get("synthetic") is True for value in features.values()) else (
+        False if all(value.get("synthetic") is False for value in features.values()) else None)
+    augmented = True if any(value.get("augmented") is True for value in features.values()) else (
+        False if all(value.get("augmented") is False for value in features.values()) else None)
+    return {"version": "track-analysis-v1", "synthetic": synthetic, "augmented": augmented,
+            "real": bool(features) and all(value.get("real") is True for value in features.values()) and synthetic is False and augmented is False,
+            "key": features[key_source]["key"] if key_source else None,
+            "key_source": key_source, "bpm": features[tempo_source]["bpm"] if tempo_source else None,
+            "tempo_source": tempo_source,
+            "beat_positions": features[tempo_source]["beat_positions"] if tempo_source else [],
+            "lufs": features.get("mix", {}).get("lufs"),
+            "mix_only_key": features.get("mix", {}).get("key"),
+            "mix_only_bpm": features.get("mix", {}).get("bpm")}
+
+
+def with_provenance(features: dict, provenance: dict | None) -> dict:
+    """Unknown origin stays unknown; only the source adapter classifies audio."""
+    values = {name: provenance.get(name) if provenance else features.get(name) for name in ("synthetic", "augmented", "real")}
+    return {**features, **values, "windows": [{**window, **values} for window in features.get("windows", [])]}
+
+
+def analyze_file(path: str | Path, output: Path | None = None, *, force: bool = False,
+                 provenance: dict | None = None) -> dict:
     path = Path(path)
     source_hash = file_hash(path)
     if output is not None and output.exists() and not force:
         cached = json.loads(output.read_text(encoding="utf-8"))
-        if cached.get("source_hash") == source_hash and cached.get("version") == VERSION:
-            return cached
+        if cached.get("source_hash") == source_hash:
+            if cached.get("version") == VERSION:
+                if provenance is not None:
+                    cached = with_provenance(cached, provenance)
+                    atomic_json(output, cached)
+                return cached
+            if cached.get("version") == "analysis-v2":
+                cached = with_provenance(upgrade_tempo(path, cached, verify_hash=False), provenance)
+                atomic_json(output, cached)
+                return cached
     # scipy returns an actual memory map for our PCM16 corpus. Compressed inputs
     # use SoundFile's bounded seek/read adapter instead of pretending to be mmap.
     try:
@@ -174,6 +241,7 @@ def analyze_file(path: str | Path, output: Path | None = None, *, force: bool = 
               "sample_rate": sr, "bpm": bpm, "beat_positions": beats, "key": key,
               "key_confidence": confidence, "lufs": loudness, "windows": windows,
               "energy_curve": [window["rms"] for window in windows]}
+    result = with_provenance(result, provenance)
     if output is not None:
         guarded(output.parent)
         atomic_json(output, result)
@@ -181,8 +249,8 @@ def analyze_file(path: str | Path, output: Path | None = None, *, force: bool = 
 
 
 def _job(arguments):
-    path, output, force = arguments
-    return analyze_file(path, output, force=force)
+    path, output, force, *extra = arguments
+    return analyze_file(path, output, force=force, provenance=extra[0] if extra else None)
 
 
 def enqueue_analysis(queue, rows: list[dict], destination: Path) -> int:
@@ -191,8 +259,8 @@ def enqueue_analysis(queue, rows: list[dict], destination: Path) -> int:
     for row in rows:
         for stem, path in row["paths"].items():
             payload = {"path": path, "output": str(destination / row["track_id"] / f"{stem}.json"),
-                       "synthetic": row.get("synthetic", False), "augmented": row.get("augmented", False)}
-            count += queue.enqueue("analysis", VERSION + ":" + row["hashes"][stem], payload)
+                       "synthetic": row.get("synthetic"), "augmented": row.get("augmented"), "real": row.get("real")}
+            count += queue.enqueue("analysis", VERSION + ":" + row["hashes"][stem] + ":" + row["track_id"] + ":" + stem, payload)
     return count
 
 
@@ -205,7 +273,8 @@ def drain_analysis(queue, workers: int | None = None, owner: str = "gpt-sol") ->
         while True:
             for job in queue.lease("analysis", owner, n=workers - len(pending), lease_s=120):
                 payload = job.payload
-                pending[pool.submit(_job, (payload["path"], Path(payload["output"]), False))] = job
+                provenance = {name: payload.get(name) for name in ("synthetic", "augmented", "real")}
+                pending[pool.submit(_job, (payload["path"], Path(payload["output"]), False, provenance))] = job
             if not pending:
                 break
             done, _ = wait(pending, timeout=30, return_when=FIRST_COMPLETED)
@@ -218,7 +287,8 @@ def drain_analysis(queue, workers: int | None = None, owner: str = "gpt-sol") ->
                     result = future.result()
                     queue.ack(job.id, {"source_hash": result["source_hash"], "version": VERSION,
                                        "output": job.payload["output"],
-                                       "synthetic": job.payload.get("synthetic", False)})
+                                       "synthetic": job.payload.get("synthetic"),
+                                       "augmented": job.payload.get("augmented"), "real": job.payload.get("real")})
                     completed += 1
                 except Exception as exc:
                     queue.fail(job.id, str(exc), retry=True)
@@ -242,7 +312,8 @@ def analyze_corpus(corpus: Path, destination: Path, workers: int | None = None, 
                     break
                 row, name, path = item
                 output = destination / row["track_id"] / f"{name}.json"
-                pending[pool.submit(_job, (path, output, force))] = (row, name)
+                provenance = {flag: row.get(flag) for flag in ("synthetic", "augmented", "real")}
+                pending[pool.submit(_job, (path, output, force, provenance))] = (row, name)
             if not pending:
                 break
             done, _ = wait(pending, return_when=FIRST_COMPLETED)
@@ -260,11 +331,29 @@ def analyze_corpus(corpus: Path, destination: Path, workers: int | None = None, 
                 if completed % 25 == 0:
                     print(json.dumps({"stage": "analysis", "completed": completed, "target": len(jobs)}), flush=True)
     elapsed = time.perf_counter() - started
+    mix_scores = scores
+    scores = []
+    for row in rows:
+        features = {}
+        for name in row["paths"]:
+            path = destination / row["track_id"] / f"{name}.json"
+            if path.exists():
+                features[name] = json.loads(path.read_text(encoding="utf-8"))
+        if features:
+            combined = combine_stem_features(features)
+            atomic_json(destination / row["track_id"] / "track.json", combined)
+            scores.append({"track_id": row["track_id"],
+                           "bpm_error": abs(combined["bpm"] - row["bpm"]) if combined["bpm"] else None,
+                           "key_correct": combined["key"] == row["key"]})
+    elapsed = time.perf_counter() - started
     bpm_errors = [row["bpm_error"] for row in scores if row["bpm_error"] is not None]
     result = {"stage": "analysis", "items": completed, "tracks": len(scores), "wall_seconds": elapsed,
               "items_per_minute": completed * 60 / elapsed, "tracks_per_minute": len(scores) * 60 / elapsed,
               "mean_bpm_error": float(np.mean(bpm_errors)) if bpm_errors else None,
               "key_accuracy": float(np.mean([row["key_correct"] for row in scores])) if scores else None,
+              "mix_key_accuracy": float(np.mean([row["key_correct"] for row in mix_scores])) if mix_scores else None,
+              "mix_mean_bpm_error": float(np.mean([row["bpm_error"] for row in mix_scores if row["bpm_error"] is not None])) if mix_scores else None,
+              "accuracy_method": "key from harmonic other stem, tempo from drums; mix-only estimates retained separately",
               "errors": errors, "scores": scores, **monitor.summary()}
     atomic_json(destination / "benchmark.json", result)
     return result

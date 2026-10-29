@@ -61,11 +61,14 @@ def assemble(rows: list[dict], seed: int = 0, duration: float = 30, bpm: float |
     candidates = [row for row in rows if row["key"].endswith("minor") == minor and .7 <= bpm / row["bpm"] <= 1.4]
     if not candidates:
         raise ValueError("no tempo/key-mode compatible stems")
-    picks = []
+    picks, selected_rows = [], []
     for stem in STEMS:
         row = candidates[int(rng.integers(len(candidates)))]
+        selected_rows.append(row)
         shift = (tonic - KEY_NAMES.index(row["key"].split()[0]) + 6) % 12 - 6
         source_length = min(row["duration"], duration * bpm / row["bpm"])
         picks.append(StemPick(row["paths"][stem], row["hashes"][stem], stem, 0, source_length,
                               row["bpm"], 0 if stem == "drums" else shift))
-    return Recipe(tuple(picks), float(bpm), key, seed, synthetic=any(row.get("synthetic", False) for row in candidates))
+    return Recipe(tuple(picks), float(bpm), key, seed,
+                  synthetic=any(row.get("synthetic", False) for row in selected_rows),
+                  augmented=any(row.get("augmented", False) for row in selected_rows))
