@@ -77,7 +77,23 @@ def cmd_taste(args) -> None:
     print(json.dumps(asdict(res)))
 
 
+def cmd_musicgen(args) -> None:
+    from remixer.adapters import build
+    from remixer.gpu.musicgen import run
+
+    a = build()
+    a.compute.prioritize_current_process("gpu")
+    print(json.dumps(run(args.duration, args.batch, args.tokens, args.seed, adapters=a)))
+
+
 def register(sub) -> None:
+    p = sub.add_parser("musicgen", help="stretch: MusicGen-small inference loop as GPU load (CC-BY-NC weights)")
+    p.add_argument("--duration", type=float, default=300)
+    p.add_argument("--batch", type=int, default=8)
+    p.add_argument("--tokens", type=int, default=256, help="new tokens per clip (50 tokens = 1 s)")
+    p.add_argument("--seed", type=int, default=0)
+    p.set_defaults(fn=cmd_musicgen)
+
     p = sub.add_parser("taste", help="train the taste MLP on window embeddings (synthetic ratings until real ones exist)")
     p.add_argument("--real", action="store_true", help="train on real ratings only (never mixed with synthetic)")
     p.add_argument("--epochs", type=int, default=50)

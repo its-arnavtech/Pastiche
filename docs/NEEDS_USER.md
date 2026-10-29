@@ -14,3 +14,21 @@ which plan was active during each run. To get the highest numbers, before a peak
    Restore afterwards with `powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e`.
 
 Then tell any agent "rerun the peak" (or run `uv run remixer bench stress --ramp` yourself).
+
+## 2. Optional cleanup: merge worktree outside the repo
+
+`opus-cc` merged PR #1 in a separate git worktree at `C:\Pastiche-merge` (branch `merge/skip-analytics`, already
+fast-forwarded into `dev`) so conflict resolution never left the shared tree half-merged. It holds its own `.venv`
+(several GB). Agents do not delete anything outside the repo, so remove it yourself when convenient:
+
+```
+git -C C:\Pastiche worktree remove --force C:\Pastiche-merge
+git -C C:\Pastiche branch -d merge/skip-analytics
+```
+
+## 3. Shared `.venv` needs one `uv sync` after the agents stop
+
+The merge added dev/optional dependencies (hypothesis, playwright extra). Per the GPU audit, nobody re-syncs the shared
+`.venv` while other agents' jobs run. When the machine is idle: `uv sync --extra analytics`. Then
+`uv run pytest -m "not scale and not web"` runs the whole suite (212 tests passed in the merge worktree).
+Browser tests additionally need `uv sync --extra web-test` and `uv run playwright install chromium`.

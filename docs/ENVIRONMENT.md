@@ -36,7 +36,18 @@ plausible, the 590 W draw is a driver reporting glitch at idle. Telemetry uses p
 
 ## PyTorch / CUDA
 
-See the section appended after `uv sync` (T-001).
+| Item | Value |
+|---|---|
+| torch | 2.14.1+cu130 (explicit `pytorch-cu130` index in pyproject) |
+| CUDA runtime (torch) | 13.0; driver UMD 13.3 |
+| cuDNN | 9.24.0 |
+| Device | NVIDIA GeForce RTX 4060 Laptop GPU, compute capability 8.9, 8188 MiB |
+| `torch.cuda.is_available()` | True |
+| Enforced GPU power limit (NVML) | 90-95 W (nvidia-smi shows 95 W cap under load) |
+| Driver memory model | WDDM with CUDA sysmem fallback: allocations past 8 GB spill to shared RAM instead of OOM (decision 0010) |
+| Demucs | 4.1.0 (`htdemucs`, `htdemucs_ft`) |
+| transformers | 5.21.0 (CLAP `laion/clap-htsat-unfused`) |
+| NPU / iGPU | OpenVINO lists `NPU` (Intel AI Boost) and `GPU.0` (Intel Arc); no Windows perf counters expose NPU utilization |
 
 ## Lane budget (from the counts above)
 
