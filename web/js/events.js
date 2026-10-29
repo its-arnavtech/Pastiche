@@ -103,7 +103,7 @@ export async function loadConfig() {
 
 export async function insightBadge() {
   const items = await (await fetch("/api/insights")).json();
-  const pending = items.filter((i) => i.answer === null || i.answer === "unsure").length;
+  const pending = items.filter((i) => i.pending ?? (i.answer === null || i.answer === "unsure")).length;
   document.querySelectorAll("[data-insight-count]").forEach((el) => {
     el.textContent = pending ? String(pending) : "";
     el.hidden = pending === 0;

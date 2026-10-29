@@ -102,6 +102,7 @@ code { font-family: ui-monospace, monospace; color: var(--text); }
 .insight .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; }
 .insight .meta .t { color: var(--text); font-weight: 600; }
 .insight .hypothesis { margin: 8px 0 14px; font-size: 16px; }
+.insight .why { margin: -8px 0 14px; color: var(--muted); font-size: 13px; }
 .answers { display: flex; gap: 8px; flex-wrap: wrap; }
 .answers button { padding: 8px 14px; }
 .answers button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
