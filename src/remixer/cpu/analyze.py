@@ -149,6 +149,17 @@ def combine_stem_features(features: dict[str, dict]) -> dict:
                        if features.get(name, {}).get("key") is not None), None)
     tempo_source = next((name for name in ("drums", "mix", "bass", "vocals")
                          if features.get(name, {}).get("bpm") is not None), None)
+    # Syncopation can make percussion follow a subdivision or a 3:2 pulse.
+    # Independent mix/bass agreement rejects that pulse; a steady bass can also
+    # disambiguate a doubled transient rate in a busy drum pattern.
+    drum_bpm = features.get("drums", {}).get("bpm")
+    mix_bpm = features.get("mix", {}).get("bpm")
+    bass_bpm = features.get("bass", {}).get("bpm")
+    def near(a, b):
+        return a is not None and b is not None and abs(a-b) <= .02 * max(a, b)
+    if bass_bpm is not None and ((near(bass_bpm, mix_bpm) and not near(bass_bpm, drum_bpm))
+                                 or (near(drum_bpm, mix_bpm) and near(2 * bass_bpm, mix_bpm))):
+        tempo_source = "bass"
     synthetic = True if any(value.get("synthetic") is True for value in features.values()) else (
         False if all(value.get("synthetic") is False for value in features.values()) else None)
     augmented = True if any(value.get("augmented") is True for value in features.values()) else (
@@ -168,6 +179,18 @@ def with_provenance(features: dict, provenance: dict | None) -> dict:
     """Unknown origin stays unknown; only the source adapter classifies audio."""
     values = {name: provenance.get(name) if provenance else features.get(name) for name in ("synthetic", "augmented", "real")}
     return {**features, **values, "windows": [{**window, **values} for window in features.get("windows", [])]}
+
+
+def write_track_summaries(rows: list[dict], destination: Path) -> int:
+    completed = 0
+    for row in rows:
+        paths = {name: destination / row["track_id"] / f"{name}.json" for name in row["paths"]}
+        if not all(path.exists() for path in paths.values()):
+            continue
+        features = {name: json.loads(path.read_text(encoding="utf-8")) for name, path in paths.items()}
+        atomic_json(destination / row["track_id"] / "track.json", combine_stem_features(features))
+        completed += 1
+    return completed
 
 
 def analyze_file(path: str | Path, output: Path | None = None, *, force: bool = False,
@@ -353,7 +376,7 @@ def analyze_corpus(corpus: Path, destination: Path, workers: int | None = None, 
               "key_accuracy": float(np.mean([row["key_correct"] for row in scores])) if scores else None,
               "mix_key_accuracy": float(np.mean([row["key_correct"] for row in mix_scores])) if mix_scores else None,
               "mix_mean_bpm_error": float(np.mean([row["bpm_error"] for row in mix_scores if row["bpm_error"] is not None])) if mix_scores else None,
-              "accuracy_method": "key from harmonic other stem, tempo from drums; mix-only estimates retained separately",
+              "accuracy_method": "key from harmonic other stem; drum/mix/bass tempo agreement with octave resolution; mix-only estimates retained separately",
               "errors": errors, "scores": scores, **monitor.summary()}
     atomic_json(destination / "benchmark.json", result)
     return result

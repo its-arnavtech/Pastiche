@@ -49,6 +49,10 @@ def test_durable_analysis_is_idempotent(tmp_path):
         saved = json.loads((tmp_path / "features" / row["track_id"] / "mix.json").read_text())
         assert saved["synthetic"] is True and saved["real"] is False
         assert all(window["synthetic"] is True for window in saved["windows"])
+        from remixer.cpu.analyze import write_track_summaries
+        assert write_track_summaries([row], tmp_path / "features") == 1
+        track = json.loads((tmp_path / "features" / row["track_id"] / "track.json").read_text())
+        assert track["synthetic"] is True and track["real"] is False
         assert drain_analysis(queue, workers=1)["completed"] == 0
     finally:
         queue.close()
@@ -62,3 +66,13 @@ def test_track_summary_uses_harmony_and_percussion_without_labels():
     assert result["key"] == "C minor" and result["key_source"] == "other"
     assert result["bpm"] == 150 and result["tempo_source"] == "drums"
     assert result["mix_only_key"] == "F minor" and result["mix_only_bpm"] == 75
+
+
+@pytest.mark.parametrize("mix,drums,bass,expected", [(165, 110, 165, 165), (164, 82, 164, 164), (168, 168, 84, 84)])
+def test_track_pulse_consensus_rejects_syncopated_subdivisions(mix, drums, bass, expected):
+    from remixer.cpu.analyze import combine_stem_features
+    result = combine_stem_features({"mix": {"bpm": mix, "beat_positions": []},
+                                    "drums": {"bpm": drums, "beat_positions": []},
+                                    "bass": {"bpm": bass, "beat_positions": []}})
+    assert result["bpm"] == expected
+    assert result["tempo_source"] == "bass"

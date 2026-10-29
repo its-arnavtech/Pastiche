@@ -34,3 +34,22 @@ improved; silently regenerate the existing corpus with changed synthesis. Reject
 Consequences: downstream selection gets explicit key_source/tempo_source and can
 distinguish blind and stem-supported results. Rhythm ambiguity and variation tests
 remain visible in measured accuracy rather than hidden by changing ground truth.
+
+Update after procedural-v2 integration: all 24 tracks and 120 files completed with
+zero errors. Busy/syncopated drums exposed doubled and 3:2 pulse estimates. Track
+tempo now uses independent mix/bass agreement to reject those percussion pulses,
+and steady-bass evidence resolves a doubled transient rate. The varied set scores
+0.285074 BPM MAE and 91.67% exact key accuracy; mix-only scores remain 3.800006 BPM
+and 54.17% key. Original 500-track results remain 0.275584 BPM and 100% stem-supported
+key after compatible bass upgrades. Truth labels are used only for evaluation.
+
+The T-017 checkpoint arrived after lane measurements. Its arrays were entirely
+nonfinite, as were three sampled CLAP embedding checkpoints. FP16 autocast had
+underflowed the log-mel floor. Keep the full front end in FP32 outside autocast;
+version the cache and HNSW index, reject nonfinite vectors/loss/weights, and replant
+current-version ratings if only old-version synthetic history exists. Retain the
+old artifacts. The coordinator must restart embedding and retrain. A corrected
+CPU CLAP forward was finite. Trained export and synth-fitness adapters preserve
+the exact GELU, bias, sigmoid and embedding-version contract; invalid auto-selected
+weights warn and retain the explicit heuristic/random probe. Explicit trained
+selection fails. Do not fabricate learned results from the corrupt checkpoint.

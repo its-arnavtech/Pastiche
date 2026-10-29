@@ -57,6 +57,8 @@ def make_report(data: Path, output: Path):
     phase = read(data / "cpu-peak/runner.json").get("phase", "not started")
     varied = read(data / "corpus-varied/benchmark.json")
     varied_analysis = read(data / "analysis-varied/benchmark.json")
+    verification = read(data / "verification/render.json")
+    test_verification = read(data / "verification/tests.json")
     lines = ["# CPU and Intel lane measurements", "",
              f"Generated {datetime.now(timezone.utc).isoformat(timespec='seconds')} from local measured artifacts.", "",
              f"Peak sequence phase: **{phase}**. Agent: `gpt-sol`, branch `dev`.", "",
@@ -134,6 +136,15 @@ def make_report(data: Path, output: Path):
                      f"{number(row.get('system_cpu_mean_percent'))} / {number(row.get('system_cpu_peak_percent'))} | "
                      f"{number((row.get('process_tree_peak_rss_bytes') or 0) / 2**30)} | {number((row.get('system_memory_peak_bytes') or 0) / 2**30)} | "
                      f"{number((row.get('system_disk_read_bytes_per_second') or 0) / 1e6)} / {number((row.get('system_disk_write_bytes_per_second') or 0) / 1e6)} |")
+    lines += ["", "| Stage | CPU temperature C | NVIDIA peak temperature C | NVIDIA observed throttle reasons |",
+              "|---|---:|---:|---|"]
+    for row in sustain.get("results", []):
+        lines.append(f"| {row['stage']} | {number(row.get('cpu_temperature_c'))} | "
+                     f"{number(row.get('gpu_temperature_peak_c'))} | "
+                     f"{', '.join(row.get('gpu_throttle_reasons', [])) or 'none observed'} |")
+    lines += ["", "These are shared host/NVIDIA observations during each CPU measurement, not Intel device "
+              "temperatures. The hardware thermal/power flags are logged under unleashed mode; "
+              "they do not establish a CPU-stage thermal limit.", ""]
     gpu_rows = []
     gpu_path = data / "cpu-peak/gpu-overlap.jsonl"
     if gpu_path.exists():
@@ -158,9 +169,19 @@ def make_report(data: Path, output: Path):
               "Unknown when idle; PDH zeroes are retained as zeroes. Missing/partial sampling cannot certify "
               "a synchronized ten-minute GPU run. NPU has no Windows utilization counter here; device execution "
               "and inferences/second are recorded directly.", ""]
+    measured_rows = [*tuning.get("rows", []), *sustain.get("results", [])]
+    max_read = max((row.get("system_disk_read_bytes_per_second", 0) for row in measured_rows), default=0)
+    max_write = max((row.get("system_disk_write_bytes_per_second", 0) for row in measured_rows), default=0)
+    lines += [f"Maximum observed configuration-average host disk rates: read {number(max_read / 1e6)} MB/s; "
+              f"write {number(max_write / 1e6)} MB/s. These are maxima across averaged measurement windows, "
+              "not instantaneous NVMe device peaks.", ""]
     lines += ["", "Render sustain uses cross-source recipes with loudness matching and actual Rubber Band processing. "
               "Synth sustain evolves full populations with selection, crossover and mutation, saves each generation, "
-              "and exposes a FitnessScorer protocol for later taste-model integration.", "",
+              "and exposes a FitnessScorer protocol. The measured sustain used heuristic fitness; a separate "
+              "single-parent CPU CLAP backend now supports trained taste fitness without duplicating the encoder in workers.", "",
+              f"Full storm-recipe verification: {verification.get('byte_identical', 'pending')}; "
+              f"duration {number(verification.get('duration_seconds'))} seconds. Two forced renders are compared "
+              "with each other and the sustained-run output, not merely with a cached render.", "",
               "Observed limits: analysis shows an early scaling plateau with full-track hashing, memory traffic and "
               "reads; the remaining CPU kernels continue gaining up to their allowed worker budget. Large host RAM "
               "occupancy and competing GPU/iGPU traffic were present, so these data do not isolate memory bandwidth "
@@ -172,7 +193,7 @@ def make_report(data: Path, output: Path):
             lines.append(f"| {mode} | {row['requested_device']} / {row['executed_device']} | {row['full_device_name']} | "
                          f"{number(row['wall_seconds'])} | {number(row['inferences_per_second'])} | "
                          f"{number(row['max_reference_error'], 6)} | {row.get('fallback_reason') or 'none'} |")
-    lines += ["", "The IR is a seeded 512→256→64→1 MLP with static batch 128. It is an untrained synthetic "
+    lines += ["", "The IR is a seeded 512→256→64→1 ReLU MLP with static batch 128. It is an untrained synthetic "
               "load/placement probe, not the owner's taste model. Device compilation and numeric validation are excluded "
               "from sustained timing. Simultaneous mode feeds bounded asynchronous request queues from one host loop. "
               "Intel GPU full names are validated before compilation; NVIDIA execution is excluded.", "",
@@ -182,9 +203,30 @@ def make_report(data: Path, output: Path):
               "cannot alone distinguish memory bandwidth, cache, power limits and thermal throttling. The GPU coordinator's "
               "combined bench record is needed to certify a synchronized all-engines result. A held GPU lock proves ownership, "
               "not sustained GPU utilization. See `docs/PEAK_REPORT.md` for the coordinator's evidence.", "",
+              "The late T-017 checkpoint failed validation: every parameter was nonfinite, as were all values in "
+              "three sampled CLAP checkpoint files. FP16 autocast underflowed the log-mel floor. The front end now "
+              "runs power/mel/log calculations in FP32; a new embedding/cache/index version isolates old artifacts. "
+              "A real CPU CLAP forward produced finite features and a finite 512-dimensional embedding "
+              "(data/verification/clap-fp32.json). The coordinator must restart embedding and retrain before the "
+              "production checkpoint can be used. Recovery is tracked in T-022. Old artifacts are retained.", "",
+              "Trained OpenVINO export and synth fitness adapters preserve the trainer's exact GELU, biases, "
+              "sigmoid and CLAP version. Fixture tests compare NumPy/OpenVINO predictions with PyTorch. "
+              "Automatic selection warns and retains the labeled random/heuristic backend when weights are "
+              "invalid; explicit trained selection fails. No learned-throughput result is claimed from corrupt "
+              "weights. Training rejects nonfinite inputs/loss/weights and replants current-version synthetic "
+              "ratings when only old-version ratings exist.", "",
+              "## Verification and handoff", "",
+              f"Repository suite: {test_verification.get('passed', 'pending')} passed, "
+              f"{test_verification.get('skipped', 'pending')} skipped, "
+              f"{test_verification.get('deselected', 'pending')} deselected. "
+              "The skipped browser extra and separately marked scale test remain distinct from CPU/NPU verification. "
+              "Exact 30-second render reproduction and deterministic evolutionary resume are checked. "
+              "CPU/NPU locks were released for the coordinator's T-018 run. No new user blocker was introduced; "
+              "existing optional power-mode, merge-worktree cleanup and idle-time environment sync are listed in "
+              "docs/NEEDS_USER.md.", "",
               "## Reproduce", "", "```powershell", "uv run remixer corpus generate --n 500 --legacy-arrangement", "uv run remixer analyze", "uv run remixer analyze --queue",
               "uv run remixer cpu tune --output data/cpu-peak/tuning", "uv run remixer cpu sustain --output data/cpu-peak/sustain --tuning data/cpu-peak/tuning/tuning.json --seconds 600",
-              "uv run remixer npu --seconds 600", "uv run python tools/corpus/report.py", "uv run pytest", "```", "",
+              "uv run remixer npu --seconds 600 --random-scorer", "uv run python tools/corpus/report.py", "uv run pytest", "```", "",
               "Acquire CPU/NPU locks through agentctl before heavy runs; the peak coordinator acquires GPU, CPU, NPU in that order. "
               "Use REMIXER_DATA_DIR for an alternate data root. Source music remains read-only.", "", "## Versions", ""]
     for package in ("numpy", "scipy", "soundfile", "pyarrow", "pedalboard", "pyloudnorm", "openvino"):
@@ -197,7 +239,7 @@ def make_report(data: Path, output: Path):
                   "Curves show median repeated measurements for each worker/chunk pair; stars show the selected "
                   "best observed result. Concurrent GPU activity and memory pressure changed during the sweep, "
                   "so this is an operational scaling record rather than an isolated processor scaling law.", ""]
-    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    output.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
 def main():

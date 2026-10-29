@@ -39,14 +39,17 @@ def register(sub):
 
 
 def _analyze(args):
-    from .analyze import analyze_corpus, drain_analysis, enqueue_analysis
+    from .analyze import analyze_corpus, drain_analysis, enqueue_analysis, write_track_summaries
     corpus, output = args.corpus or data_dir() / "corpus", args.output or data_dir() / "analysis"
     if args.queue:
         import pyarrow.parquet as pq
         from remixer.adapters import build
         adapters = build()
-        enqueue_analysis(adapters.jobs, pq.read_table(corpus / "manifest.parquet").to_pylist(), output)
-        print(json.dumps(drain_analysis(adapters.jobs, args.workers), indent=2))
+        rows = pq.read_table(corpus / "manifest.parquet").to_pylist()
+        enqueue_analysis(adapters.jobs, rows, output)
+        result = drain_analysis(adapters.jobs, args.workers)
+        result["track_summaries"] = write_track_summaries(rows, output)
+        print(json.dumps(result, indent=2))
     else:
         print(json.dumps(analyze_corpus(corpus, output, args.workers, args.force), indent=2))
 

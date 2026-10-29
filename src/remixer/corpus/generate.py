@@ -225,7 +225,7 @@ def generate_corpus(destination: Path, n: int = 500, seed: int = 0, workers: int
     jobs = []
     for i in range(n):
         duration = float(rng.uniform(min_duration, max_duration))
-        # Cycle all arrangements before seeded permutations; even small batches
+        # Cycle all arrangements with a seeded offset; even small batches
         # exercise different harmony, syncopation, note rests and velocities.
         arrangement = (i + seed) % 8 if varied else None
         jobs.append((TrackSpec(seed + i, duration, sample_rate, arrangement=arrangement), destination))
