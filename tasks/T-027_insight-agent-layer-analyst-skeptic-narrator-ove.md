@@ -1,14 +1,14 @@
 ---
 id: T-027
 title: Insight agent layer: analyst, skeptic, narrator over skip candidates
-status: todo
+status: in_progress
 owner: cursor-opus
 branch: cursor/insight-agents-442b
 lane: none
 depends_on: [T-014, T-015, T-016]
 owns_paths: [src/remixer/insights/, tests/insights/]
-claimed_at:
-heartbeat_at:
+claimed_at: 2026-10-29T04:40:17Z
+heartbeat_at: 2026-10-29T04:40:17Z
 priority: P1
 ---
 
@@ -23,3 +23,4 @@ All tests pass; decision records for thresholds, caps, budget and update rule; p
 ## Progress and handoff log
 
 - 2026-10-29T04:40:17Z cursor-opus: created
+- 2026-10-29T04:40:17Z cursor-opus: claimed
