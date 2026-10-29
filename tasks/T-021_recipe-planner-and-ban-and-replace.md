@@ -8,7 +8,7 @@ lane: none
 depends_on: [T-015, T-020]
 owns_paths: [src/remixer/planner/, tests/planner/]
 claimed_at: 2026-10-29T03:52:51Z
-heartbeat_at: 2026-10-29T03:52:51Z
+heartbeat_at: 2026-10-29T04:01:50Z
 priority: P1
 ---
 
@@ -24,3 +24,4 @@ All planner property tests and contracts pass; scale numbers in the changelog; d
 
 - 2026-10-29T03:52:51Z cursor-opus: created
 - 2026-10-29T03:52:51Z cursor-opus: claimed
+- 2026-10-29T04:01:50Z cursor-opus: planner core committed; ban-and-replace tests next
