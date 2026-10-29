@@ -43,7 +43,16 @@ def gumbel(key: int, uids: np.ndarray) -> np.ndarray:
     return -np.log(-np.log(uniforms(key, uids)))
 
 
-def ranked(key: int, uids: np.ndarray, log_weights: np.ndarray, tiebreak: np.ndarray) -> np.ndarray:
-    """Positions ordered by ``log_weights + Gumbel`` descending (ties by ``tiebreak`` ascending)."""
+def ranked(key: int, uids: np.ndarray, log_weights: np.ndarray, tiebreak: np.ndarray,
+           top: int | None = None) -> np.ndarray:
+    """Positions ordered by ``log_weights + Gumbel`` descending (ties by ``tiebreak`` ascending).
+
+    With ``top``, only the best ``top`` positions are returned. Everything tied with the
+    ``top``-th value is kept before sorting, so the result never depends on input order.
+    """
     perturbed = log_weights + gumbel(key, uids)
+    if top is not None and top < len(perturbed):
+        kth = np.partition(-perturbed, top - 1)[top - 1]
+        sel = np.nonzero(-perturbed <= kth)[0]
+        return sel[np.lexsort((tiebreak[sel], -perturbed[sel]))][:top]
     return np.lexsort((tiebreak, -perturbed))

@@ -158,14 +158,24 @@ def source_length_ms(dst_len_ms: int, stretch: float) -> int:
     return int(round(dst_len_ms * stretch))
 
 
-def positions(stem: StemMeta, src_len_ms: int) -> list[int]:
-    """Source start times on the stem's downbeat grid where ``src_len_ms`` fits."""
-    b = bar_ms(stem.bpm, stem.meter)
+def position_at(stem: StemMeta, k: int) -> int:
+    return int(round(stem.downbeat_ms + k * bar_ms(stem.bpm, stem.meter)))
+
+
+def position_count(stem: StemMeta, src_len_ms: int) -> int:
+    """How many downbeat-grid starts fit ``src_len_ms`` (they are ``position_at(stem, 0..n-1)``)."""
     room = stem.duration_ms - stem.downbeat_ms - src_len_ms
     if room < 0:
-        return []
-    return [int(round(stem.downbeat_ms + k * b)) for k in range(int(room // b) + 1)
-            if int(round(stem.downbeat_ms + k * b)) + src_len_ms <= stem.duration_ms]
+        return 0
+    n = int(room // bar_ms(stem.bpm, stem.meter)) + 1
+    while n and position_at(stem, n - 1) + src_len_ms > stem.duration_ms:
+        n -= 1
+    return n
+
+
+def positions(stem: StemMeta, src_len_ms: int) -> list[int]:
+    """Source start times on the stem's downbeat grid where ``src_len_ms`` fits."""
+    return [position_at(stem, k) for k in range(position_count(stem, src_len_ms))]
 
 
 class CandidateIndex:
@@ -204,7 +214,7 @@ class CandidateIndex:
         return len(self.stems)
 
     def query(self, role: str, target: Target) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Compatible stems for (role, target): (indices, fit, shift, stretch, multiplier), sorted by index."""
+        """Compatible stems for (role, target): (indices, fit, shift, stretch, multiplier), in bucket order."""
         cfg = self.cfg
         r = ROLES.index(role)
         bucket = self.buckets.get((r, target.meter))
@@ -240,6 +250,4 @@ class CandidateIndex:
         tfit = (1.0 - 0.5 * np.abs(stretch - 1.0) / cfg.max_stretch) * np.where(mult == 1.0, 1.0, cfg.half_double_penalty)
         score = kfit * tfit * (1.0 - 0.5 * diff / cfg.energy_tolerance)
         keep = np.nonzero(ok)[0]
-        order = np.argsort(idx[keep], kind="stable")
-        keep = keep[order]
         return idx[keep], score[keep], shift[keep], stretch[keep], mult[keep]

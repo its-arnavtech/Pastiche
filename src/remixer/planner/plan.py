@@ -44,8 +44,10 @@ from remixer.fatigue.selection import (
 from remixer.fatigue.state import FatigueModel
 
 from .catalog import NeighborQuery, StemCatalog, StemMeta
-from .compat import DEFAULT_COMPAT, CandidateIndex, CompatConfig, Target, positions, section_length_ms, \
-    source_length_ms
+from .compat import (
+    DEFAULT_COMPAT, CandidateIndex, CompatConfig, Target, position_at, position_count, positions, section_length_ms,
+    source_length_ms,
+)
 from .exclusions import Exclusion, ExclusionSet, SongBan, exclusion_id
 from .lineage import Lineage
 from .model import (
@@ -251,16 +253,15 @@ class Planner:
         if not len(idx):
             return None
         logw = self.log_base[idx] + np.log(fit) + self._log_div(uses[ix.song[idx]], history[ix.song[idx]])
-        order = ranked(key, self.uids[idx], logw, idx)
-        for j in order[:c.max_tries]:
+        for j in ranked(key, self.uids[idx], logw, idx, top=c.max_tries):
             stem = ix.stems[int(idx[j])]
             src_len = source_length_ms(dst_len, float(stretch[j]))
-            pos = positions(stem, src_len)
-            if not pos:
+            n_pos = position_count(stem, src_len)
+            if not n_pos:
                 continue
-            first = int(uniforms(key ^ 0x5EED, self.uids[idx[j]:idx[j] + 1])[0] * len(pos))
-            for t in range(min(len(pos), c.max_positions)):
-                start = pos[(first + t) % len(pos)]
+            first = int(uniforms(key ^ 0x5EED, self.uids[idx[j]:idx[j] + 1])[0] * n_pos)
+            for t in range(min(n_pos, c.max_positions)):
+                start = position_at(stem, (first + t) % n_pos)
                 if not self._blocked(stem, start, start + src_len, forbid):
                     return self._placement(stem, start, src_len, dst_start, dst_len, float(stretch[j]),
                                            float(mult[j]), int(shift[j]))
