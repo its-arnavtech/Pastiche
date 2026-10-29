@@ -1,14 +1,14 @@
 ---
 id: T-015
 title: Fatigue model + selection weights
-status: in_progress
+status: done
 owner: cursor-opus
 branch: feature/skip-analytics
 lane: none
 depends_on: [T-014]
 owns_paths: [src/remixer/fatigue/, tests/fatigue/]
 claimed_at: 2026-10-29T03:10:35Z
-heartbeat_at: 2026-10-29T03:10:35Z
+heartbeat_at: 2026-10-29T03:16:11Z
 priority: P1
 ---
 
@@ -24,3 +24,4 @@ Unit tests for decay, cap and weight composition.
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner cursor-opus)
 - 2026-10-29T03:10:35Z cursor-opus: claimed
+- 2026-10-29T03:16:11Z cursor-opus: done: credit, attribution, decaying fatigue, neighbor propagation, selection with cap, insights with confirmed flag; tests incl. known-culprit simulation and detector->insight->selection pipeline. Handoff: wire RecipeLookup to catalog recipe_stems and NeighborLookup to VectorIndex.
