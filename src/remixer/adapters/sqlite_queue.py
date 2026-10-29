@@ -98,6 +98,12 @@ class SqliteJobQueue(JobQueue):
             "error=?, lease_until=NULL, updated_at=? WHERE id=?",
             (1 if retry else 0, error[-4000:], time.time(), job_id))
 
+    def release(self, job_id: int) -> None:
+        """Give a leased job back untouched (the attempt does not count)."""
+        self._con.execute("UPDATE jobs SET status='queued', lease_owner=NULL, lease_until=NULL, "
+                          "attempts=MAX(attempts-1, 0), updated_at=? WHERE id=? AND status='leased'",
+                          (time.time(), job_id))
+
     def extend(self, job_id: int, lease_s: float = 300.0) -> None:
         self._con.execute("UPDATE jobs SET lease_until=?, updated_at=? WHERE id=? AND status='leased'",
                           (time.time() + lease_s, time.time(), job_id))
