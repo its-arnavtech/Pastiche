@@ -1,0 +1,49 @@
+"""Taste trainer: learns a planted direction, and synthetic/real ratings never mix."""
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from remixer.adapters import build
+from remixer.gpu import taste
+
+
+@pytest.fixture
+def fake_embeddings(data_dir):
+    a = build()
+    mv = "fake@1"
+    rng = np.random.default_rng(1)
+    root = data_dir / "embeddings" / "fake_1"
+    root.mkdir(parents=True)
+    for s in range(40):
+        stem = f"stem{s}"
+        v = rng.standard_normal((30, 32)).astype(np.float16)
+        np.save(root / f"{stem}.npy", v)
+        for w in range(30):
+            a.catalog.upsert("windows", {"window_id": f"{stem}-{w}", "owner_id": stem, "owner_kind": "stem",
+                                         "start_ms": w * 5000, "end_ms": w * 5000 + 5000, "model_version": mv},
+                             key=["window_id"])
+    return a, mv
+
+
+def test_learns_planted_taste(fake_embeddings):
+    a, mv = fake_embeddings
+    ids, vecs = taste.load_window_vectors(a, mv)
+    assert len(ids) == 1200 and vecs.shape == (1200, 32)
+    taste.synthesize_ratings(a, ids, vecs, frac=0.8, seed=3)
+    res = taste.train(a, "synthetic", model_version=mv, epochs=60, batch=256, width=64, seed=3)
+    assert res.val_auc > 0.85 and res.truth_cos > 0.8
+
+
+def test_synthetic_and_real_never_mix(fake_embeddings):
+    a, _ = fake_embeddings
+    a.catalog.insert("rating_events", {"event_id": "r1", "target_kind": "window", "target_id": "stem0-0",
+                                       "rating": "up", "wall_time": "t", "synthetic": 1})
+    assert taste.load_ratings(a, "real") == []  # the synthetic row is excluded from real data
+    a.events.append("synthetic_ratings", [{"event_id": "x", "target_id": "stem0-0", "rating": "up", "synthetic": False}])
+    with pytest.raises(AssertionError):
+        taste.load_ratings(a, "synthetic")
+
+
+def test_auc():
+    assert taste.auc(np.array([.1, .4, .35, .8]), np.array([0, 0, 1, 1])) == 0.75

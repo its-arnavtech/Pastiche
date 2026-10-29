@@ -64,7 +64,29 @@ def cmd_embed(args) -> None:
     print(json.dumps({**summary(met), "batch": emb.sizer.batch or args.batch, "jobs": a.jobs.counts(f"embed:{emb.name}")}))
 
 
+def cmd_taste(args) -> None:
+    from dataclasses import asdict
+
+    from remixer.adapters import build
+    from remixer.gpu.taste import train
+
+    a = build()
+    a.compute.prioritize_current_process("gpu")
+    res = train(a, kind="real" if args.real else "synthetic", epochs=args.epochs, duration_s=args.duration,
+                batch=args.batch, width=args.width, seed=args.seed)
+    print(json.dumps(asdict(res)))
+
+
 def register(sub) -> None:
+    p = sub.add_parser("taste", help="train the taste MLP on window embeddings (synthetic ratings until real ones exist)")
+    p.add_argument("--real", action="store_true", help="train on real ratings only (never mixed with synthetic)")
+    p.add_argument("--epochs", type=int, default=50)
+    p.add_argument("--duration", type=float, help="keep training for N seconds (GPU load)")
+    p.add_argument("--batch", type=int, default=8192)
+    p.add_argument("--width", type=int, default=256, help="first hidden layer; 256 matches the NPU scorer")
+    p.add_argument("--seed", type=int, default=0)
+    p.set_defaults(fn=cmd_taste)
+
     p = sub.add_parser("embed", help="CLAP embeddings per stem and 5-second window (holds the gpu lane)")
     p.add_argument("--model", help="default from profile (laion/clap-htsat-unfused)")
     p.add_argument("--batch", type=int, help="fixed batch of windows (default: autosized)")
