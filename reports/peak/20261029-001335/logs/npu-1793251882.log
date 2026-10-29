@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Pastiche\src\remixer\cli.py", line 101, in <module>
+    main()
+  File "C:\Pastiche\src\remixer\cli.py", line 97, in main
+    sys.exit(args.fn(args) or 0)
+             ^^^^^^^^^^^^^
+  File "C:\Pastiche\src\remixer\npu\cli.py", line 22, in _run
+    print(json.dumps(benchmark(args.output or data_dir() / "npu", args.seconds, tuple(args.devices),
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Pastiche\src\remixer\npu\scorer.py", line 177, in benchmark
+    model = export_scorer(destination, spec)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Pastiche\src\remixer\npu\scorer.py", line 70, in export_scorer
+    trained = TasteWeights.load(spec.weights_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Pastiche\src\remixer\npu\trained.py", line 35, in load
+    raise ValueError("taste weights must be finite")
+ValueError: taste weights must be finite

@@ -1,0 +1,134 @@
+[
+ {
+  "phase": "ramp:gpu",
+  "lane": "gpu",
+  "level": 0.25,
+  "config": {
+   "batch": 2,
+   "mode": "cycle"
+  },
+  "seconds": 90.0,
+  "tag": "ramp:gpu@25",
+  "t_start": 1793245856.039515,
+  "t_end": 1793246031.746849,
+  "ok": true,
+  "throughput": 6.94,
+  "unit": "audio-s/s",
+  "result": {
+   "stage": "separate",
+   "tracks": 1,
+   "audio_s": 456.3,
+   "wall_s": 120.7,
+   "rate_x": 3.78,
+   "steady_rate_x": 6.94,
+   "model_rate_x": 6.94,
+   "batches": 39,
+   "batch": 10,
+   "jobs": {
+    "done": 63,
+    "leased": 2,
+    "queued": 435
+   }
+  },
+  "error": ""
+ },
+ {
+  "phase": "ramp:gpu",
+  "lane": "gpu",
+  "level": 0.5,
+  "config": {
+   "batch": 5,
+   "mode": "cycle"
+  },
+  "seconds": 90.0,
+  "tag": "ramp:gpu@50",
+  "t_start": 1793246031.8400898,
+  "t_end": 1793246274.0447888,
+  "ok": true,
+  "throughput": 11.44,
+  "unit": "audio-s/s",
+  "result": {
+   "stage": "separate",
+   "tracks": 2,
+   "audio_s": 731.2,
+   "wall_s": 123.5,
+   "rate_x": 5.92,
+   "steady_rate_x": 11.44,
+   "model_rate_x": 11.44,
+   "batches": 25,
+   "batch": 10,
+   "jobs": {
+    "done": 63,
+    "leased": 2,
+    "queued": 435
+   }
+  },
+  "error": ""
+ },
+ {
+  "phase": "ramp:gpu",
+  "lane": "gpu",
+  "level": 0.75,
+  "config": {
+   "batch": 8,
+   "mode": "cycle"
+  },
+  "seconds": 90.0,
+  "tag": "ramp:gpu@75",
+  "t_start": 1793246274.0523314,
+  "t_end": 1793246544.2992156,
+  "ok": true,
+  "throughput": 9.57,
+  "unit": "audio-s/s",
+  "result": {
+   "stage": "separate",
+   "tracks": 1,
+   "audio_s": 468.0,
+   "wall_s": 122.8,
+   "rate_x": 3.81,
+   "steady_rate_x": 9.57,
+   "model_rate_x": 9.57,
+   "batches": 10,
+   "batch": 10,
+   "jobs": {
+    "done": 63,
+    "leased": 2,
+    "queued": 435
+   }
+  },
+  "error": ""
+ },
+ {
+  "phase": "ramp:gpu",
+  "lane": "gpu",
+  "level": 1.0,
+  "config": {
+   "batch": 10,
+   "mode": "cycle"
+  },
+  "seconds": 90.0,
+  "tag": "ramp:gpu@100",
+  "t_start": 1793246544.312271,
+  "t_end": 1793246802.27884,
+  "ok": true,
+  "throughput": 30.92,
+  "unit": "audio-s/s",
+  "result": {
+   "stage": "separate",
+   "tracks": 8,
+   "audio_s": 1930.5,
+   "wall_s": 122.2,
+   "rate_x": 15.8,
+   "steady_rate_x": 30.92,
+   "model_rate_x": 30.92,
+   "batches": 33,
+   "batch": 10,
+   "jobs": {
+    "done": 63,
+    "leased": 2,
+    "queued": 435
+   }
+  },
+  "error": ""
+ }
+]

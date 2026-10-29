@@ -1,0 +1,19 @@
+# Lane budgets, computed from this machine's real core count (see docs/ENVIRONMENT.md).
+# Intel Core Ultra 9 185H: 16 physical cores (6 P with HT, 8 E, 2 LP-E), 22 logical processors.
+# Regenerate with: uv run remixer resources --write   (recomputes from os.cpu_count())
+machine:
+  logical_cores: 22
+  physical_cores: 16
+  ram_gb: 23.4
+  vram_gb: 8.0
+reserve:
+  logical_cores: 1        # OS + agent tooling. Never 0: the agents must stay able to steer the run.
+gpu_lane:
+  feeder_cores: 4         # decode + resample + pinned-memory prefetch for Demucs / embeddings
+  exclusive: true         # 8 GB VRAM: one GPU job at a time (agentctl lock gpu)
+  prefetch_batches: 2
+cpu_lane:
+  workers: 17             # logical (22) - gpu feeders (4) - reserve (1)
+npu_lane:
+  host_threads: 1         # drives OpenVINO NPU/iGPU; borrowed from cpu_lane when both run
+  devices: [NPU, GPU.0]   # OpenVINO device names; fall back to CPU if export fails

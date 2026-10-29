@@ -1,0 +1,114 @@
+[   0.1s] remixer demo: 20 synthetic tracks of 30s, mode=stable, real Demucs + CLAP on the GPU
+[   0.1s] stable preset: {'cpu_workers': 8, 'separation_model': 'htdemucs', 'gpu_batch': 8, 'npu_devices': ['NPU'], 'watchdog': True, 'cpu_limit_c': 93.0, 'gpu_limit_c': 94.0, 'resume_margin_c': 8.0, 'cooldown_c': 82.0}
+[   0.1s] data dir: C:\Pastiche\reports\demo\work\data (the real data/ directory is not used)
+[   0.1s]    [PASS] stable preset active
+
+[   0.1s] == [1/12] generate 20 synthetic tracks
+[  15.7s]    20 tracks, 600 audio-seconds, BPM [118, 120, 122, 124, 126], keys ['A minor', 'C major', 'E minor', 'G major']
+[  15.7s]    [PASS] corpus generated
+[  15.7s]    (15.6s)
+
+[  15.7s] == [2/12] ingest into the catalog and enqueue separation
+[  15.8s]    registered 20 tracks (all synthetic=1), enqueued 20 separation jobs
+[  15.8s]    [PASS] ingest registered every track
+[  15.8s]    (0.1s)
+
+[  15.8s] == [3/12] separate into stems (Demucs htdemucs) with one forced kill and resume
+[  26.5s]    thermals before GPU work: CPU zone 73.9 C, GPU 58 C (waited 11s for the CPU zone to fall below 82 C)
+[  43.8s]    FORCED KILL of the separation worker (pid 19108) with queue {'done': 4, 'leased': 12, 'queued': 4}; 4 half-written stem file(s) left behind
+[  69.6s]    resumed worker exit 0; queue now {'done': 20}; jobs re-leased after the kill: 12; leftover .partial files: 0
+[  69.8s]    [PASS] every track separated into 4 stems: 80 stems, queue {'done': 20}
+[  69.8s]    [PASS] kill-and-resume: killed mid-run, resumed, nothing lost or duplicated: at the kill {'done': 4, 'leased': 12, 'queued': 4}; after resume {'done': 20}
+[  69.9s]    (54.1s)
+
+[  69.9s] == [4/12] analyze stems (tempo, key, LUFS) on the CPU lane
+[  77.3s]    analyzed 80 stems with 8 workers in 6.0s
+[  77.3s]    [PASS] every stem has an analysis row: 80 rows
+[  77.3s]    harmonic stems: key matches a true corpus key in 19/20
+[  77.3s]    (7.5s)
+
+[  77.3s] == [5/12] embed stems and 5-second windows (CLAP)
+[ 112.6s]    thermals before GPU work: CPU zone 79.9 C, GPU 61 C (waited 35s for the CPU zone to fall below 82 C)
+[ 142.3s]    embed worker exit 0: 80 stem vectors, 480 window vectors
+[ 142.3s]    [PASS] every stem embedded: 80 stems, 480 windows
+[ 142.3s]    (65.0s)
+
+[ 142.3s] == [6/12] train the taste model (synthetic ratings) and score every stem
+[ 153.9s]    embedding version laion/clap-htsat-unfused@transformers-5.21.0-logmel-f32-v2; taste scores for 80 stems, min 0.00 mean 0.54 max 1.00; validation AUC 0.8854166666666666
+[ 153.9s]    [PASS] every stem has a finite taste score
+[ 153.9s]    (11.6s)
+
+[ 153.9s] == [7/12] plan 4 recipes and render them (section-cached)
+[ 153.9s]    planner sees 80 synthetic stems
+[ 158.2s]    recipe 0cc61df3d7: 4 sections, 14 placements, 126 BPM G major, songs ['055885', '059bfd', '179fb3', '23c0ab', '4da01c', '7785e1', '8bca07', '97ae75', '991620', 'a9a2d6'], rendered in 4.2s
+[ 161.9s]    recipe 8f4f2278b2: 4 sections, 14 placements, 120 BPM C major, songs ['008123', '055885', '059bfd', '179fb3', '23c0ab', '4da01c', 'b86560', 'baf010', 'bfbf0e', 'c0b051', 'e22980', 'e7efcf', 'fff718'], rendered in 3.7s
+[ 165.5s]    recipe b9a321ce65: 4 sections, 14 placements, 122 BPM C major, songs ['008123', '055885', '179fb3', '991620', 'b86560', 'baf010', 'c0b051', 'e22980', 'e7efcf', 'fff718'], rendered in 3.6s
+[ 169.0s]    recipe a477d1d3b1: 4 sections, 14 placements, 126 BPM G major, songs ['008123', '055885', '059bfd', '179fb3', '23c0ab', '4da01c', '8bca07', 'a9a2d6', 'bfbf0e', 'e22980', 'fff718'], rendered in 3.5s
+[ 169.0s]    unfilled slots: 8 {'vocals': 8}; near-silent stems in the library: {'vocals': 20} (Demucs finds almost no voice in synthetic audio, so its vocal stems are near-silent and the planner refuses them in loud sections instead of mixing silence)
+[ 169.0s]    [PASS] 4 recipes planned, every section has at least 3 of the 4 roles, and any gap has a reason: unfilled 8
+[ 172.6s]    [PASS] render is reproducible (fresh cache, identical sha256): a5b5408b669dba66
+[ 172.8s]    (18.9s)
+
+[ 172.8s] == [8/12] serve them from the real player backend; replay a scripted listening session
+[ 173.7s]    backend on http://127.0.0.1:57539: /api/tracks lists 4 generated tracks ([30, 31, 31, 30] s)
+[ 173.7s]    GET /audio/0cc61df3d74226441532ea8... Range bytes=0-1023 -> 206, 1024 bytes, bytes 0-1023/2687676
+[ 173.7s]    [PASS] audio served with HTTP Range
+[ 173.7s]    [PASS] player lists the rendered recipes: 4 generated
+[ 173.7s]    replayed scripted listening: 72 events in 5 sessions posted to /api/events -> 72 accepted
+[ 173.9s]    [PASS] every event stored in order
+[ 173.9s]    [PASS] an invalid control (seek +10 s) is rejected: event 0: event_type 'seek_fwd_10s' not in ('play', 'pause', 
+[ 173.9s]    (1.1s)
+
+[ 173.9s] == [9/12] heatmap: burst, undo, replay, candidate window
+[ 173.9s]    single skip: 5 listens; per listen: skipped ms [5000, 5000, 5000], presses [1, 1, 1], undone ms [0, 0, 0], replayed ms [0, 0, 0], end track_end
+[ 173.9s]    burst      : 5 listens; per listen: skipped ms [15000, 15000, 15000], presses [3, 3, 3], undone ms [0, 0, 0], replayed ms [0, 0, 0], end track_end
+[ 173.9s]    undo       : 5 listens; per listen: skipped ms [0, 0, 0], presses [1, 1, 1], undone ms [5000, 5000, 5000], replayed ms [0, 0, 0], end track_end
+[ 173.9s]    replay     : 5 listens; per listen: skipped ms [0, 0, 0], presses [0, 0, 0], undone ms [0, 0, 0], replayed ms [5000, 5000, 5000], end track_end
+[ 173.9s]    [PASS] a burst of 3 presses is ONE skip (one burst, three presses): 1 burst, 3 presses, 15000 ms skipped
+[ 173.9s]    [PASS] overshoot then -5 s is an undo: the skip is cancelled: net skipped 0 ms, undone 5000 ms
+[ 173.9s]    [PASS] a -5 s into a region just heard is a replay: 5000 ms replayed
+[ 173.9s]    candidate window: track 0cc61df3 window 2 (10-15s) listens 5 reached 5 skipped 5 undone 0 skip-rate 1.00
+[ 173.9s]    candidate window: track 8f4f2278 window 2 (10-15s) listens 5 reached 4 skipped 4 undone 0 skip-rate 1.00
+[ 173.9s]    candidate window: track 8f4f2278 window 3 (15-20s) listens 5 reached 4 skipped 4 undone 0 skip-rate 1.00
+[ 173.9s]    candidate window: track 8f4f2278 window 4 (20-25s) listens 5 reached 4 skipped 4 undone 0 skip-rate 1.00
+[ 173.9s]    [PASS] the singly-skipped window (10-15 s) is a candidate
+[ 173.9s]    [PASS] the undone skip and the replayed region are not candidates
+[ 174.8s]    (0.9s)
+
+[ 174.8s] == [10/12] insight layer: surface an insight in the passive inbox
+[ 174.8s]    LLM: deterministic MockLLM (heuristic script). Use --llm ollama for the local model.
+[ 174.9s]    nightly pass: skipped=None candidates=2 calls=6 errors=[]
+[ 174.9s]    INBOX [shown] Recombined 0cc61d, 10-15 s: "You've skipped 0:10-0:15 in 5 of 5 listens." The skip lines up with vocals drop out. (answers offered: yes / no / not sure; nothing changes until the user answers)
+[ 174.9s]    [PASS] an insight is waiting in the passive inbox: 1 item(s)
+[ 174.9s]    (0.1s)
+
+[ 174.9s] == [11/12] ratings change the next batch (fatigue); synthetic and real stay apart
+[ 175.1s]    rating_events rows: [('down', 'track', 'synthetic=1'), ('tired', 'track', 'synthetic=1')]
+[ 175.1s]    [PASS] ratings land in rating_events tagged synthetic=1
+[ 175.1s]    fatigue before -> after: rated-down stem 0.00 -> 0.30 (disliked=True); its nearest neighbour 0.00 -> 0.09; tired-of stem 0.00 -> 0.60
+[ 175.1s]    [PASS] rating -> rating_events -> fatigue: stem disliked, neighbour and tired stems fatigued
+[ 175.2s]    next batch (same seed 7): 32 distinct stems, 31 shared with the first batch, 1 new; rated-down stem present: False; tired-of stem present: True
+[ 175.2s]    [PASS] the next recipe batch changed and avoids the rated-down stem
+[ 175.2s]    playback events by origin: {'synthetic': 74, 'real': 0, 'unknown': 0}
+[ 175.2s]    [PASS] no real-origin events or tracks exist in the demo
+[ 175.3s]    [PASS] real-origin fatigue sees none of the synthetic ratings
+[ 175.3s]    [PASS] a real planner cannot use the synthetic taste model
+[ 175.3s]    [PASS] a real-origin planner sees no synthetic stems
+[ 175.3s]    (0.4s)
+
+[ 175.3s] == [12/12] ban a song: patch only the affected sections, keep every other hash
+[ 175.3s]    banning song 179fb31740: it is in 4 of 4 recipes
+[ 175.3s]    [PASS] ban flagged exactly the recipes that contain the song: 4 patches
+[ 176.3s]    recipe 0cc61df3 -> ead29e37: re-rendered sections [1], reused (cache hit, hash unchanged) [0, 2, 3], needs_regeneration []; unchanged-section audio byte-identical: True; 0.9s; replacements [(1, 'e7bc26', '02d5cf')]
+[ 177.4s]    recipe 8f4f2278 -> 3c457886: re-rendered sections [0], reused (cache hit, hash unchanged) [1, 2, 3], needs_regeneration []; unchanged-section audio byte-identical: True; 1.1s; replacements [(0, '54a784', '3d5411')]
+[ 178.3s]    recipe a477d1d3 -> 5307b388: re-rendered sections [2], reused (cache hit, hash unchanged) [0, 1, 3], needs_regeneration []; unchanged-section audio byte-identical: True; 0.9s; replacements [(2, '54a784', '3d5411')]
+[ 180.3s]    recipe b9a321ce -> 54d6b268: re-rendered sections [2, 3], reused (cache hit, hash unchanged) [0, 1], needs_regeneration []; unchanged-section audio byte-identical: True; 1.9s; replacements [(2, 'e7bc26', '60ea36'), (3, '54a784', '3d5411')]
+[ 180.3s]    [PASS] only the affected sections were re-rendered; every other section hash and its audio is unchanged: 5 of 16 sections re-rendered across 4 recipes
+[ 180.3s]    [PASS] recipes without the song were not touched: 0 recipes
+[ 180.3s]    [PASS] the banned song appears in no current recipe
+[ 180.3s]    [PASS] future plans avoid the banned song
+[ 180.4s]    [PASS] the player now serves the patched versions
+[ 180.4s]    note: 31 per-stem effect entries across these renders were not applied (see docs/KNOWN_LIMITATIONS.md)
+[ 180.4s]    (5.1s)
+
+[ 180.4s] 33/33 checks passed in 180s; output in C:\Pastiche\reports\demo

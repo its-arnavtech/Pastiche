@@ -1,0 +1,14 @@
+2026-10-28 22:59:03,594 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/htdemucs.yaml "HTTP/1.1 307 Temporary Redirect"
+2026-10-28 22:59:03,629 INFO httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/adefossez/HTDemucs/cbc8a9b1a87023b7fd74e7b3412e6321c0eab003/htdemucs.yaml?%2Fadefossez%2FHTDemucs%2Fresolve%2Fmain%2Fhtdemucs.yaml=&etag=%220d5f2089fa3e1a0335d93de070f6802598cd4a4d%22 "HTTP/1.1 200 OK"
+2026-10-28 22:59:03,708 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/955717e8.safetensors "HTTP/1.1 302 Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-28 22:59:03,711 WARNING huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-28 23:00:09,385 INFO remixer.guards: guard ok (unleashed): gpu 70.0 C cpu None C battery=False throttle=[] disk 637 GB
+2026-10-28 23:01:02,648 INFO remixer.gpu.separate: separate: 0.8x realtime, 0 tracks, batch 8, prefetch wait 2.0s
+2026-10-28 23:01:03,422 INFO remixer.guards: guard ok (unleashed): gpu 72.0 C cpu None C battery=False throttle=[] disk 637 GB
+2026-10-28 23:01:09,300 INFO remixer.gpu.separate: separate: 14.1x realtime, 0 tracks, batch 8, prefetch wait 2.0s
+2026-10-28 23:01:16,726 INFO remixer.gpu.separate: separate: 12.6x realtime, 0 tracks, batch 8, prefetch wait 2.0s
+2026-10-28 23:01:25,866 INFO remixer.gpu.separate: separate: 5.1x realtime, 1 tracks, batch 8, prefetch wait 2.0s
+2026-10-28 23:01:31,256 INFO remixer.gpu.separate: separate: 8.7x realtime, 1 tracks, batch 8, prefetch wait 2.0s
+2026-10-28 23:01:36,284 INFO remixer.gpu.separate: separate: 18.6x realtime, 1 tracks, batch 8, prefetch wait 2.0s
+{"stage": "separate", "tracks": 1, "audio_s": 468.0, "wall_s": 122.8, "rate_x": 3.81, "steady_rate_x": 9.57, "model_rate_x": 9.57, "batches": 10, "batch": 10, "jobs": {"done": 63, "leased": 2, "queued": 435}}

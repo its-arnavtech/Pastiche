@@ -1,0 +1,308 @@
+{
+  "fast": false,
+  "tracks": 20,
+  "steps": {
+    "generate 20 synthetic tracks": 15.6,
+    "ingest into the catalog and enqueue separation": 0.1,
+    "separate into stems (Demucs htdemucs) with one forced kill and resume": 54.1,
+    "analyze stems (tempo, key, LUFS) on the CPU lane": 7.5,
+    "embed stems and 5-second windows (CLAP)": 65.0,
+    "train the taste model (synthetic ratings) and score every stem": 11.6,
+    "plan 4 recipes and render them (section-cached)": 18.9,
+    "serve them from the real player backend; replay a scripted listening session": 1.1,
+    "heatmap: burst, undo, replay, candidate window": 0.9,
+    "insight layer: surface an insight in the passive inbox": 0.1,
+    "ratings change the next batch (fatigue); synthetic and real stay apart": 0.4,
+    "ban a song: patch only the affected sections, keep every other hash": 5.1
+  },
+  "kill_resume": {
+    "queue_at_kill": {
+      "done": 4,
+      "leased": 12,
+      "queued": 4
+    },
+    "queue_after": {
+      "done": 20
+    },
+    "retried_jobs": 12
+  },
+  "separation_log": {
+    "stage": "separate",
+    "tracks": 16,
+    "audio_s": 468.0,
+    "wall_s": 13.6,
+    "rate_x": 34.31,
+    "steady_rate_x": 66.33,
+    "model_rate_x": 66.33,
+    "batches": 10,
+    "batch": 8,
+    "jobs": {
+      "done": 20
+    }
+  },
+  "embed_log": {
+    "stage": "embed",
+    "tracks": 80,
+    "audio_s": 2400.0,
+    "wall_s": 3.5,
+    "rate_x": 681.55,
+    "steady_rate_x": 0,
+    "model_rate_x": 0,
+    "batches": 40,
+    "windows": 480,
+    "windows_per_s": 0,
+    "batch": 12,
+    "jobs": {
+      "done": 80
+    }
+  },
+  "candidates": [
+    {
+      "track_id": "0cc61df3d74226441532ea885f401d282b7d3212814ad103ff56a2951a31eb75",
+      "track_version": "0cc61df3d74226441532ea885f401d282b7d3212814ad103ff56a2951a31eb75",
+      "window_index": 2,
+      "start_ms": 10000,
+      "end_ms": 15000,
+      "track_listens": 5,
+      "reached": 5,
+      "played": 0,
+      "skipped": 5,
+      "replayed": 0,
+      "undone": 0
+    },
+    {
+      "track_id": "8f4f2278b23467e50516fea120cfc6a81dc0631f55bdd630c92eba5031c795d6",
+      "track_version": "8f4f2278b23467e50516fea120cfc6a81dc0631f55bdd630c92eba5031c795d6",
+      "window_index": 2,
+      "start_ms": 10000,
+      "end_ms": 15000,
+      "track_listens": 5,
+      "reached": 4,
+      "played": 0,
+      "skipped": 4,
+      "replayed": 0,
+      "undone": 0
+    },
+    {
+      "track_id": "8f4f2278b23467e50516fea120cfc6a81dc0631f55bdd630c92eba5031c795d6",
+      "track_version": "8f4f2278b23467e50516fea120cfc6a81dc0631f55bdd630c92eba5031c795d6",
+      "window_index": 3,
+      "start_ms": 15000,
+      "end_ms": 20000,
+      "track_listens": 5,
+      "reached": 4,
+      "played": 0,
+      "skipped": 4,
+      "replayed": 0,
+      "undone": 0
+    },
+    {
+      "track_id": "8f4f2278b23467e50516fea120cfc6a81dc0631f55bdd630c92eba5031c795d6",
+      "track_version": "8f4f2278b23467e50516fea120cfc6a81dc0631f55bdd630c92eba5031c795d6",
+      "window_index": 4,
+      "start_ms": 20000,
+      "end_ms": 25000,
+      "track_listens": 5,
+      "reached": 4,
+      "played": 0,
+      "skipped": 4,
+      "replayed": 0,
+      "undone": 0
+    }
+  ],
+  "insight": [
+    {
+      "insight_id": "0cc61df3d74226441532ea885f401d282b7d3212814ad103ff56a2951a31eb75:0cc61df3d74226441532ea885f401d282b7d3212814ad103ff56a2951a31eb75:10000-15000",
+      "track_id": "0cc61df3d74226441532ea885f401d282b7d3212814ad103ff56a2951a31eb75",
+      "track_version": "0cc61df3d74226441532ea885f401d282b7d3212814ad103ff56a2951a31eb75",
+      "title": "Recombined 0cc61d",
+      "source_kind": "generated",
+      "start_ms": 10000,
+      "end_ms": 15000,
+      "hypothesis": "You've skipped 0:10-0:15 in 5 of 5 listens.",
+      "why": "The skip lines up with vocals drop out.",
+      "state": "shown",
+      "answer": null,
+      "confirmed": false,
+      "pending": true,
+      "ask_again_on": null,
+      "shown_day": "2026-10-29"
+    }
+  ],
+  "insight_llm": "mock",
+  "ban": {
+    "song": "179fb31740227f12dfb34c187217a5fe684c7e043132dedbc26867249309c047",
+    "recipes_affected": 4,
+    "sections_rerendered": 5,
+    "sections_total_in_affected": 16
+  },
+  "checks": [
+    {
+      "check": "stable preset active",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "corpus generated",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "ingest registered every track",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "every track separated into 4 stems",
+      "ok": true,
+      "detail": "80 stems, queue {'done': 20}"
+    },
+    {
+      "check": "kill-and-resume: killed mid-run, resumed, nothing lost or duplicated",
+      "ok": true,
+      "detail": "at the kill {'done': 4, 'leased': 12, 'queued': 4}; after resume {'done': 20}"
+    },
+    {
+      "check": "every stem has an analysis row",
+      "ok": true,
+      "detail": "80 rows"
+    },
+    {
+      "check": "every stem embedded",
+      "ok": true,
+      "detail": "80 stems, 480 windows"
+    },
+    {
+      "check": "every stem has a finite taste score",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "4 recipes planned, every section has at least 3 of the 4 roles, and any gap has a reason",
+      "ok": true,
+      "detail": "unfilled 8"
+    },
+    {
+      "check": "render is reproducible (fresh cache, identical sha256)",
+      "ok": true,
+      "detail": "a5b5408b669dba66"
+    },
+    {
+      "check": "audio served with HTTP Range",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "player lists the rendered recipes",
+      "ok": true,
+      "detail": "4 generated"
+    },
+    {
+      "check": "every event stored in order",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "an invalid control (seek +10 s) is rejected",
+      "ok": true,
+      "detail": "event 0: event_type 'seek_fwd_10s' not in ('play', 'pause', "
+    },
+    {
+      "check": "a burst of 3 presses is ONE skip (one burst, three presses)",
+      "ok": true,
+      "detail": "1 burst, 3 presses, 15000 ms skipped"
+    },
+    {
+      "check": "overshoot then -5 s is an undo: the skip is cancelled",
+      "ok": true,
+      "detail": "net skipped 0 ms, undone 5000 ms"
+    },
+    {
+      "check": "a -5 s into a region just heard is a replay",
+      "ok": true,
+      "detail": "5000 ms replayed"
+    },
+    {
+      "check": "the singly-skipped window (10-15 s) is a candidate",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "the undone skip and the replayed region are not candidates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "an insight is waiting in the passive inbox",
+      "ok": true,
+      "detail": "1 item(s)"
+    },
+    {
+      "check": "ratings land in rating_events tagged synthetic=1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "rating -> rating_events -> fatigue: stem disliked, neighbour and tired stems fatigued",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "the next recipe batch changed and avoids the rated-down stem",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "no real-origin events or tracks exist in the demo",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "real-origin fatigue sees none of the synthetic ratings",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "a real planner cannot use the synthetic taste model",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "a real-origin planner sees no synthetic stems",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "ban flagged exactly the recipes that contain the song",
+      "ok": true,
+      "detail": "4 patches"
+    },
+    {
+      "check": "only the affected sections were re-rendered; every other section hash and its audio is unchanged",
+      "ok": true,
+      "detail": "5 of 16 sections re-rendered across 4 recipes"
+    },
+    {
+      "check": "recipes without the song were not touched",
+      "ok": true,
+      "detail": "0 recipes"
+    },
+    {
+      "check": "the banned song appears in no current recipe",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "future plans avoid the banned song",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "the player now serves the patched versions",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "failed": 0,
+  "wall_seconds": 180.4
+}

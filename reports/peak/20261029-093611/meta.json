@@ -1,0 +1,57 @@
+{
+  "ts": "20261029-093611",
+  "lanes": [
+    "gpu",
+    "cpu",
+    "npu"
+  ],
+  "requested_lanes": [
+    "gpu",
+    "cpu",
+    "npu"
+  ],
+  "step_seconds": 90.0,
+  "sustain_s": 3600.0,
+  "mode": "unleashed",
+  "power_plan": "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced); AC power mode overlay: best performance",
+  "resources": {
+    "logical": 22,
+    "cpu_workers": 17,
+    "gpu_feeders": 4,
+    "reserve": 1
+  },
+  "gpu_batch_max": 10,
+  "label": "T-018 round 2: pinned lanes (0024), Best performance AC, ramp + 60 min sustain",
+  "core_plan": {
+    "gpu": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "cpu": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "npu": [
+      20
+    ],
+    "reserve": [
+      21
+    ]
+  }
+}

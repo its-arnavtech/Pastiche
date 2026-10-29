@@ -1,0 +1,10 @@
+# 0025 Load caps and thermal protection after two unexpected shutdowns
+
+- Context: the first two T-018 attempts under the Best performance power mode ended with the laptop powering off (System log event 6008, "previous system shutdown ... was unexpected", twice on 2026-10-29). Both died at the same point: the CPU render ramp (4 then 7 workers) right after 8 minutes of GPU ramp, with the GPU otherwise idle. Round 1 under Balanced survived a 60-minute combined sustain at 91 % CPU. A PDH probe found an ACPI zone readable without admin rights, `_TZ.THRM`, that tracks the CPU package: 70-94 C at idle (median 79 C), 96 C within 4 s of loading 6 cores at ~175 % of base clock, back to 77 C within 8 s of stopping. The user asked to adjust the parameters and retry because earlier runs used too much.
+- Decision:
+  - Telemetry records every thermal zone (`tz_*_c`, `tz_*_passive_pct`) and uses `_TZ.THRM` as `cpu_temp_c` when LibreHardwareMonitor is absent.
+  - `bench stress` gains load caps and a thermal watchdog (`Limits`). The `--cool` preset: CPU lane at most 8 render workers, GPU batch at most 8 on light htdemucs only (no htdemucs_ft + shifts), NPU without the iGPU (which shares the CPU package power budget), cooldown to an 82 C CPU-zone median before every step, and a watchdog that suspends the CPU and NPU lane process trees while the 10 s median CPU zone is at or above 97 C or the GPU at or above 90 C, resuming 8 C lower. Every pause, resume and cooldown is stored with the step.
+  - Results are already written after every step, so a shutdown keeps everything measured before it; crashed runs stay in reports/peak/ and the report lists them.
+  - Tuning starts from `--cool` and relaxes one cap per round while the machine stays up.
+- Alternatives: revert the user's power-mode choice (a system setting the user made; recommended in docs/NEEDS_USER.md instead); unleashed defaults (the cause of the shutdowns).
+- Consequences: peak numbers are "highest sustainable without the machine shutting down", which is what this laptop can actually do; the report states which caps were active.

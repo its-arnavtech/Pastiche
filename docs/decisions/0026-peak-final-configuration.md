@@ -1,0 +1,9 @@
+# 0026 Final peak configuration: thermally capped, CPU/GPU trade-off instead of a joint pass
+
+- Context: T-018's pass condition is GPU > 90 % while the CPU lane stays near saturation on its own cores. After two shutdowns (decision 0025) the hunt ran under `--cool` caps. Round 2 (ramp + 60 min) survived, but its GPU 90 C watchdog trigger sat inside the GPU's own 87-91 C steady state, so the CPU and NPU lanes were paused for the last 22 minutes. Rounds 3-5 (15-minute sustains, decision 0022) raised the GPU trigger to 94 C and then moved CPU render workers 8 -> 6 -> 10. Scores against round 1: 1.862, 1.837 (-1.3 %), 1.857 (+1.1 %), so the hunt converged.
+- Decision:
+  - The final configuration is round 3: `--cool --gpu-mode cycle --gpu-limit-c 94` (GPU lane batch 8, light htdemucs, logical CPUs 0-5, above-normal priority; 8 render workers on 6-19; NPU-only taste scorer on 20; watchdog at 97 C CPU zone / 94 C GPU; 82 C cooldown between steps).
+  - The pass condition is reported as not met jointly. CPU and GPU share one cooling budget: more render workers push the CPU lane's cores to 95 % but drop the GPU to 86 %; fewer (6) lift the GPU to 90.2 % but leave the CPU lane at 75 %. `--cpu-max-workers 6` is the documented option when GPU occupancy matters more.
+  - Bench artifacts are committed under reports/peak/ except `lanes/` (rendered scratch audio, about 1 GB), which is ignored.
+- Alternatives: further rounds on GPU batch or iGPU (the GPU is thermally clock-limited at about 55 W, so a bigger batch does not add work; the iGPU shares the CPU package budget that is already the bottleneck); uncapped settings (shut the machine down twice).
+- Consequences: docs/PEAK_REPORT.md states "highest sustainable without shutting down" numbers; anyone wanting more must improve cooling (docs/NEEDS_USER.md item 4), not software settings.

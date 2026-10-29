@@ -1,0 +1,6 @@
+2026-10-29 17:34:58,432 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/htdemucs.yaml "HTTP/1.1 307 Temporary Redirect"
+2026-10-29 17:34:58,444 INFO httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/adefossez/HTDemucs/cbc8a9b1a87023b7fd74e7b3412e6321c0eab003/htdemucs.yaml?%2Fadefossez%2FHTDemucs%2Fresolve%2Fmain%2Fhtdemucs.yaml=&etag=%220d5f2089fa3e1a0335d93de070f6802598cd4a4d%22 "HTTP/1.1 200 OK"
+2026-10-29 17:34:58,499 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/955717e8.safetensors "HTTP/1.1 302 Found"
+2026-10-29 17:35:00,572 INFO remixer.gpu.vram: batch size 8 for demucs:htdemucs@demucs-4.1.0:fp16=True:shifts=1 ({'base_gib': 0.172, 'per_item_gib': 0.339, 'available_gib': 7.572, 'margin_gib': 0.6})
+2026-10-29 17:35:08,327 INFO remixer.gpu.vram: calibrated batch 8 for demucs:htdemucs@demucs-4.1.0:fp16=True:shifts=1: {1: 10.18, 2: 9.3, 4: 10.7, 6: 10.68, 8: 11.73}
+2026-10-29 17:35:09,303 INFO remixer.guards: guard ok (stable): gpu 79.0 C cpu None C battery=False throttle=[] disk 542 GB
