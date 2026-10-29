@@ -9,7 +9,7 @@ files: [src/remixer/analytics/__init__.py, src/remixer/analytics/events.py, src/
 
 ## What changed
 
-remixer.analytics: append-only event envelope with validation (events.py); listen reconstruction and interpretation rules as pure functions with every threshold in InterpretConfig (interpret.py: skip bursts within 2 s = one skip of N x 5 s, undo within 6 s cancels the latest press, late return into skipped audio cancels it, replay over heard audio, early/mid/near-end next, previous vs restart); 5 s window heatmap keyed by track_version with reached-window denominator and DetectorConfig (min 3 listens, >= 2 skips, skip rate >= 0.6, undo rate <= 0.2) (heatmap.py). owns_paths of T-014..T-016 updated per decision 0004.
+remixer.analytics: append-only event envelope with validation (events.py); listen reconstruction and interpretation rules as pure functions with every threshold in InterpretConfig (interpret.py: skip bursts within 2 s = one skip of N x 5 s, undo within 6 s cancels the latest press, late return into skipped audio cancels it, replay over heard audio, early/mid/near-end next, previous vs restart); 5 s window heatmap keyed by track_version with reached-window denominator and DetectorConfig (min 3 listens, >= 2 skips, skip rate >= 0.6, undo rate <= 0.2) (heatmap.py). owns_paths of T-014..T-016 updated per decision 0006.
 
 ## Why
 

@@ -1,4 +1,4 @@
-# 0005 Skip interpretation and detector defaults
+# 0007 Skip interpretation and detector defaults
 
 - Context: spec section 5 gives the rules in words ("about 2 seconds", "soon after", "clear majority", "rare"). T-014 needs numbers, all configurable (`InterpretConfig`, `DetectorConfig` in `remixer.analytics`).
 - Decision:

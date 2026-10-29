@@ -1,14 +1,14 @@
 ---
 id: T-004
 title: Demucs separation worker, VRAM autosizing
-status: todo
+status: in_progress
 owner: opus-cc
 branch: dev
 lane: gpu
 depends_on: [T-002, T-003]
 owns_paths: [src/remixer/gpu/separate.py, src/remixer/gpu/vram.py, src/remixer/gpu/prefetch.py]
-claimed_at:
-heartbeat_at:
+claimed_at: 2026-10-29T02:45:55Z
+heartbeat_at: 2026-10-29T02:45:55Z
 priority: P0
 ---
 
@@ -23,3 +23,4 @@ Separates the synthetic corpus resumably, cached by (content hash, model version
 ## Progress and handoff log
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner opus-cc)
+- 2026-10-29T02:45:56Z opus-cc: claimed

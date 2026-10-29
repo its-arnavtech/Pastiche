@@ -8,7 +8,7 @@ One envelope for every player control. Fields, in storage order:
 - ``wall_time`` is UTC epoch milliseconds (``Date.now()`` in the browser).
 - ``position_ms`` is the playhead at the moment of the control, before any seek.
 - Seeks are always exactly ``SEEK_MS``; the target is derived, never stored.
-- ``payload`` is optional and only used by rating/insight events (decision 0004).
+- ``payload`` is optional and only used by rating/insight events (decision 0006).
 """
 from __future__ import annotations
 

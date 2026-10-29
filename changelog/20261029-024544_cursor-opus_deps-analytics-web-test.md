@@ -4,12 +4,12 @@ agent: cursor-opus
 branch: feature/skip-analytics
 type: decision
 tasks: [T-014, T-015, T-016]
-files: [pyproject.toml, uv.lock, docs/decisions/0004-cursor-opus-paths-and-packaging.md]
+files: [pyproject.toml, uv.lock, docs/decisions/0006-cursor-opus-paths-and-packaging.md]
 ---
 
 ## What changed
 
-Bare pyproject.toml (uv init --bare, no build backend) with optional groups: analytics = numpy>=1.26, duckdb>=1.0, pyarrow>=15; web-test = playwright>=1.45; dev group = pytest, hypothesis. pytest config: pythonpath src, 'scale' and 'web' markers, scale tests opt-in. Decision 0004: cursor-opus paths follow the brief (src/remixer/analytics, src/remixer/fatigue, web/), remixer stays a namespace package until T-001, single event envelope with optional payload for rating and insight events.
+Bare pyproject.toml (uv init --bare, no build backend) with optional groups: analytics = numpy>=1.26, duckdb>=1.0, pyarrow>=15; web-test = playwright>=1.45; dev group = pytest, hypothesis. pytest config: pythonpath src, 'scale' and 'web' markers, scale tests opt-in. Decision 0006: cursor-opus paths follow the brief (src/remixer/analytics, src/remixer/fatigue, web/), remixer stays a namespace package until T-001, single event envelope with optional payload for rating and insight events.
 
 ## Why
 
