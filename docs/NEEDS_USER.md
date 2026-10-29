@@ -34,7 +34,7 @@ git -C C:\Pastiche branch -d merge/skip-analytics
 
 ## 3. Shared `.venv` needs one `uv sync` after the agents stop
 
-**Status 2026-10-29: done** (`uv sync --extra analytics` with all agents idle). Still open: browser tests need `uv sync --extra web-test` plus `uv run playwright install chromium`, which downloads a browser build from Microsoft's CDN; agents do not download browser binaries on their own.
+**Status 2026-10-29: done.** `uv sync --extra analytics --extra web-test --extra player` with all agents idle. The browser tests now run on the system Microsoft Edge when Playwright's own Chromium build is missing (decision 0029), so nothing is required. Optional: `uv run playwright install chromium` (a download from Microsoft's CDN) makes them use the bundled headless build instead.
 
 The merge added dev/optional dependencies (hypothesis, playwright extra). Per the GPU audit, nobody re-syncs the shared
 `.venv` while other agents' jobs run. When the machine is idle: `uv sync --extra analytics`. Then
