@@ -102,6 +102,10 @@ class JobQueue(ABC):
     def fail(self, job_id: int, error: str, retry: bool = True) -> None: ...
 
     @abstractmethod
+    def release(self, job_id: int) -> None:
+        """Return a leased, unprocessed job to the queue without counting the attempt."""
+
+    @abstractmethod
     def extend(self, job_id: int, lease_s: float = 300.0) -> None: ...
 
     @abstractmethod
