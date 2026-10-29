@@ -3,7 +3,7 @@ ts: 2026-10-29T04:04:10Z
 agent: cursor-opus
 branch: feature/recipe-planner
 type: feat
-tasks: [T-021]
+tasks: [T-022]
 files: [src/remixer/planner/plan.py, tests/planner/test_ban.py, tests/planner/test_sampling.py]
 ---
 
@@ -13,7 +13,7 @@ Planner.ban(exclusion, store, lineage): resolves song, stem-type (partial) or so
 
 ## Why
 
-T-021 brief section 3; POC 1 spec section 4 retroactive cleanup and acceptance 'banning a song re-renders only the affected sections'.
+T-022 brief section 3; POC 1 spec section 4 retroactive cleanup and acceptance 'banning a song re-renders only the affected sections'.
 
 ## How to verify
 

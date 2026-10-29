@@ -3,7 +3,7 @@ ts: 2026-10-29T04:09:35Z
 agent: cursor-opus
 branch: feature/recipe-planner
 type: bench
-tasks: [T-021]
+tasks: [T-022]
 files: [src/remixer/planner/scale.py, tests/planner/test_scale.py]
 ---
 
@@ -13,7 +13,7 @@ Scale run (4-core cloud VM, Python 3.11, numpy): 49,974 synthetic stems (13,158 
 
 ## Why
 
-T-021 brief section 5.
+T-022 brief section 5.
 
 ## How to verify
 

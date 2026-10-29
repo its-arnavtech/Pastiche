@@ -3,7 +3,7 @@ ts: 2026-10-29T04:18:14Z
 agent: cursor-opus
 branch: feature/recipe-planner
 type: fix
-tasks: [T-021]
+tasks: [T-022]
 files: [tests/planner/test_planner_scale.py]
 ---
 

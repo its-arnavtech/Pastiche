@@ -1,8 +1,8 @@
-# 0014: Recipe planner defaults (thresholds, sampling, replacement ranking)
+# 0019: Recipe planner defaults (thresholds, sampling, replacement ranking)
 
 - Date: 2026-10-29
 - Agent: cursor-opus
-- Tasks: T-021
+- Tasks: T-022
 
 Every value below is a field of `PlannerConfig`, `CompatConfig` or `SelectionConfig`, so any of them can
 be changed without code changes.

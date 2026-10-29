@@ -1,4 +1,4 @@
-"""Recipe planner and ban-and-replace (T-021). Pure logic: numpy plus ``remixer.fatigue``."""
+"""Recipe planner and ban-and-replace (T-022). Pure logic: numpy plus ``remixer.fatigue``."""
 from .catalog import InMemoryCatalog, NeighborQuery, StemCatalog, StemMeta
 from .compat import CandidateIndex, CompatConfig, Target, fit
 from .exclusions import Rest, SongBan, SoundBan, StemTypeBan, exclusion_id, rest

@@ -1,4 +1,4 @@
-"""Exclusions: what may never appear in a new or patched recipe (decision 0012).
+"""Exclusions: what may never appear in a new or patched recipe (decision 0019).
 
 - ``Rest`` is *not* an exclusion: it is the temporary "tired of this" signal and only lowers the
   selection weight through the fatigue model (``rest()`` records it). It never triggers a patch.

@@ -1,4 +1,4 @@
-"""RecipeStore and Lineage contracts (T-021): immutable versions, supersede chain, one-lookup lineage.
+"""RecipeStore and Lineage contracts (T-022): immutable versions, supersede chain, one-lookup lineage.
 
 Every backend in ``RECIPE_BACKENDS`` must pass. Recipes come from the real planner on a small
 synthetic library, version 2 from a real ban, so the stored shapes are the production ones.

@@ -1,6 +1,6 @@
 """Compatibility of a stem with a section target (key, tempo, beat grid, energy, role).
 
-Defaults are in ``CompatConfig`` and decision 0012. A stem is compatible with a target when:
+Defaults are in ``CompatConfig`` and decision 0019. A stem is compatible with a target when:
 
 - **meter** (beat grid): same beats per bar. Source ranges always start on a source downbeat, so
   bars line up after stretching.

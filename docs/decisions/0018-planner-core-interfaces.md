@@ -1,8 +1,8 @@
-# 0013: Recipe planner: what it assumes from the core
+# 0018: Recipe planner: what it assumes from the core
 
 - Date: 2026-10-29
 - Agent: cursor-opus
-- Tasks: T-021 (requests: T-022, T-023, T-024, T-025)
+- Tasks: T-022 (requests: T-023, T-024, T-025, T-026)
 
 The planner (`src/remixer/planner/`) does not import or edit core, GPU, CPU, DSP or NPU code. Everything
 it needs from the core is a `Protocol` in its own module, built and tested against in-memory fakes.
@@ -27,9 +27,9 @@ class StemCatalog(Protocol):
     def stems_of(self, song_id: str) -> Sequence[StemMeta]: ...
 ```
 
-The source is the catalog's `stems`, `analysis` and `embeddings` tables plus the vector index (T-022).
+The source is the catalog's `stems`, `analysis` and `embeddings` tables plus the vector index (T-023).
 
-## NeighborQuery (`planner/catalog.py`): T-022
+## NeighborQuery (`planner/catalog.py`): T-023
 
 ```python
 class NeighborQuery(Protocol):
@@ -41,7 +41,7 @@ class NeighborQuery(Protocol):
 recipes. The planner unions it with an exact scan of its own columnar index, so an approximate HNSW
 `within` that misses neighbors is tolerated, but it is slower.
 
-## RecipeStore (`planner/store.py`): T-023
+## RecipeStore (`planner/store.py`): T-024
 
 ```python
 class RecipeStore(Protocol):
@@ -55,7 +55,7 @@ class RecipeStore(Protocol):
 
 It stores `Recipe.canonical_bytes` under `recipe_id` (sha256). Versions are immutable.
 
-## Lineage (`planner/lineage.py`): T-023
+## Lineage (`planner/lineage.py`): T-024
 
 ```python
 class Lineage(Protocol):
@@ -68,13 +68,13 @@ class Lineage(Protocol):
 Window ids are `"<song_id>#<index>"` for 5-second source windows. In the catalog, `recipe_stems` (plus a
 recipe-window table) indexed by song, stem and window gives the one-lookup answer.
 
-## Deletion: T-024
+## Deletion: T-025
 
 Deleting a tenant or a track must remove or tombstone every recipe whose provenance contains it,
 found through `Lineage.containing(song=...)`, including superseded versions, plus their renders.
 Spec POC 2 section 4.
 
-## Renderer hook: T-025
+## Renderer hook: T-026
 
 `Patch.render_request()` returns:
 

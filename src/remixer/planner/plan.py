@@ -1,7 +1,7 @@
 """Recipe planner: seeded, compatibility-aware batch planning and ban-and-replace patches.
 
 Everything is a pure function of (catalog, taste, fatigue state, confirmed insights, exclusions,
-config, seed). Defaults and their reasons are in decision 0012.
+config, seed). Defaults and their reasons are in decision 0019.
 
 Planning a batch of ``n`` recipes:
 1. Per recipe, an *anchor* stem (any non-drum stem) is drawn by Gumbel-max over

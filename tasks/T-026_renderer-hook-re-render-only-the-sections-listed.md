@@ -1,11 +1,11 @@
 ---
-id: T-025
+id: T-026
 title: Renderer hook: re-render only the sections listed in a patch
 status: todo
 owner: opus-cc
 branch: feature/render-patch
 lane: none
-depends_on: [T-021]
+depends_on: [T-022]
 owns_paths: [src/remixer/cpu/, src/remixer/gpu/]
 claimed_at:
 heartbeat_at:
@@ -14,7 +14,7 @@ priority: P1
 
 ## Goal
 
-Accept the JSON from remixer.planner.Patch.render_request() (shape in docs/decisions/0013): recipe_id, supersedes, track_id (root id), sections[] each with section, section_hash, start_seconds, end_seconds, bpm, key, seed and stems[] (stem_id, source_hash, stem, start_seconds, end_seconds, offset_seconds, stretch, tempo_multiplier, semitones, gain_db, effects), plus needs_regeneration[] section indices. Re-render only the listed sections, reuse every other section's audio from the superseded render keyed by section_hash, splice at section boundaries, and record the new render under the new recipe_id. Sections in needs_regeneration are left for generation (silence or previous audio, flagged). Stem field names follow remixer.cpu.assemble.StemPick. Coordinate with gpt-sol, who owns the renderer.
+Accept the JSON from remixer.planner.Patch.render_request() (shape in docs/decisions/0018): recipe_id, supersedes, track_id (root id), sections[] each with section, section_hash, start_seconds, end_seconds, bpm, key, seed and stems[] (stem_id, source_hash, stem, start_seconds, end_seconds, offset_seconds, stretch, tempo_multiplier, semitones, gain_db, effects), plus needs_regeneration[] section indices. Re-render only the listed sections, reuse every other section's audio from the superseded render keyed by section_hash, splice at section boundaries, and record the new render under the new recipe_id. Sections in needs_regeneration are left for generation (silence or previous audio, flagged). Stem field names follow remixer.cpu.assemble.StemPick. Coordinate with gpt-sol, who owns the renderer.
 
 ## Definition of done
 

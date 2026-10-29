@@ -1,11 +1,11 @@
 ---
-id: T-024
+id: T-025
 title: Tenant and track deletion removes derived recipes and renders
 status: todo
 owner: opus-cc
 branch: feature/recipe-deletion
 lane: none
-depends_on: [T-021, T-023]
+depends_on: [T-022, T-024]
 owns_paths: [src/remixer/adapters/, src/remixer/interfaces.py]
 claimed_at:
 heartbeat_at:

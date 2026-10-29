@@ -1,6 +1,6 @@
 """What the planner needs from the core, as Protocols, plus in-memory fakes used by tests.
 
-The core does not provide these yet. ``opus-cc`` tasks describe them (decision 0011):
+The core does not provide these yet. ``opus-cc`` tasks describe them (decision 0018):
 
 - ``StemCatalog``: stem metadata from the catalog's ``stems`` + ``analysis`` + ``embeddings`` rows.
 - ``NeighborQuery``: nearest-k and radius queries over stem embeddings (the ``VectorIndex``).
