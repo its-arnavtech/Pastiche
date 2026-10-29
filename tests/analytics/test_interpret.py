@@ -41,6 +41,19 @@ def test_burst_is_one_skip_of_n_presses():
     assert 6 not in windows(listen, "played")
 
 
+def test_final_press_of_a_burst_is_partly_credited():
+    # 4 presses from 38 s land at 58 s; the dislike probably ended inside the last jump (53-58 s),
+    # so only 53-56.75 s is credited and window 11 (55-60 s) keeps 1.75 s of skip, below half.
+    p = Player("s").load(T).play().listen_to(38_000)
+    for _ in range(4):
+        p.fwd()
+    p.listen_to(120_000).end()
+    listen = one_listen(p)
+    assert windows(listen, "skipped") == [8, 9, 10]
+    full = InterpretConfig(last_press_credit=1.0)
+    assert sorted(f.index for f in classify_windows(listen, full) if f.skipped) == [8, 9, 10, 11]
+
+
 def test_presses_further_apart_than_burst_gap_are_separate_skips():
     p = Player("s").load(T).play().listen_to(31_000).fwd().wait(2500).fwd().listen_to(120_000).end()
     assert [b.n_presses for b in one_listen(p).bursts] == [1, 1]

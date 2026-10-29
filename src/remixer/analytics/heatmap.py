@@ -21,8 +21,8 @@ from typing import Iterable, Iterator, Mapping
 
 from .events import Event, group_sessions
 from .interpret import (
-    DEFAULT_CONFIG, InterpretConfig, Listen, VersionKey, classify_windows, interpret_session,
-    resolve_durations,
+    DEFAULT_CONFIG, InterpretConfig, Listen, VersionKey, interpret_session, resolve_durations,
+    window_rows,
 )
 
 REACHED, PLAYED, SKIPPED, REPLAYED, UNDONE = range(5)
@@ -83,15 +83,15 @@ class HeatmapBuilder:
         if listen.duration_ms:
             self.durations[key] = listen.duration_ms
         wins = self.windows.setdefault(key, {})
-        for f in classify_windows(listen, self.cfg):
-            c = wins.get(f.index)
+        for w, _, _, played, skipped, replayed, undone in window_rows(listen, self.cfg):
+            c = wins.get(w)
             if c is None:
-                c = wins[f.index] = [0, 0, 0, 0, 0]
+                c = wins[w] = [0, 0, 0, 0, 0]
             c[REACHED] += 1
-            c[PLAYED] += f.played
-            c[SKIPPED] += f.skipped
-            c[REPLAYED] += f.replayed
-            c[UNDONE] += f.undone
+            c[PLAYED] += played
+            c[SKIPPED] += skipped
+            c[REPLAYED] += replayed
+            c[UNDONE] += undone
 
     def add_session(self, events: list[Event], durations: Mapping[VersionKey, int] | None = None) -> None:
         for listen in interpret_session(events, self.cfg, durations):

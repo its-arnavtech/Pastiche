@@ -168,6 +168,8 @@ def make_library(n_tracks: int, rng: random.Random, planted_fraction: float = 0.
 
         def place(kind: str, length: int) -> None:
             for _ in range(20):
+                if not free:
+                    return
                 start = rng.choice(free)
                 span = range(start - 3, start + length + 3)
                 if all(w in free for w in span):

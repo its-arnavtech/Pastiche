@@ -29,10 +29,10 @@ Passive signals feed analytics only; nothing here prompts the user.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from .events import SEEK_MS, Event, group_sessions
-from .intervals import Interval, intersect, merge, overlap, subtract
+from .intervals import Interval, intersect, merge, subtract
 
 VersionKey = tuple[str, str]
 
@@ -46,6 +46,7 @@ class InterpretConfig:
     late_return_cancels_skip: bool = True
     coverage_fraction: float = 0.5      # share of a window that must be heard/skipped/... to count
     min_reach_ms: int = 500             # traversal needed for a window to count as reached
+    last_press_credit: float = 0.75     # share of a burst's final net press counted as skipped
     restart_threshold_ms: int = 3000    # previous past this point restarts the current track
     early_next_fraction: float = 0.33
     early_next_ms: int = 30000          # used when the duration is unknown
@@ -260,27 +261,53 @@ def interpret_session(events: Sequence[Event], cfg: InterpretConfig = DEFAULT_CO
 
 def classify_windows(listen: Listen, cfg: InterpretConfig = DEFAULT_CONFIG) -> list[WindowFlags]:
     """Flags for every window this listen reached (heard, skipped over, or undone)."""
-    trav = listen.traversed
-    if not trav:
-        return []
-    w_ms = cfg.window_ms
+    return [WindowFlags(*row) for row in window_rows(listen, cfg)]
+
+
+def window_rows(listen: Listen, cfg: InterpretConfig = DEFAULT_CONFIG
+                ) -> Iterator[tuple[int, int, int, bool, bool, bool, bool]]:
+    """``(index, start_ms, end_ms, played, skipped, replayed, undone)`` per reached window."""
     skipped = listen.skipped
-    out = []
-    for w in range(trav[0][0] // w_ms, (trav[-1][1] - 1) // w_ms + 1):
+    trav = merge([*listen.heard, *skipped, *listen.undone])
+    if not trav:
+        return
+    if skipped and cfg.last_press_credit < 1.0:
+        tails = []
+        for b in listen.bursts:
+            if b.net_presses:
+                s, e = b.presses[b.net_presses - 1]
+                tails.append((s + int(cfg.last_press_credit * (e - s)), e))
+        skipped = subtract(skipped, tails)
+    w_ms = cfg.window_ms
+    n = (trav[-1][1] - 1) // w_ms + 1
+    reach = bin_coverage(trav, w_ms, n)
+    heard = bin_coverage(listen.heard, w_ms, n)
+    skip = bin_coverage(skipped, w_ms, n) if skipped else None
+    replay = bin_coverage(listen.replays, w_ms, n) if listen.replays else None
+    undo = bin_coverage(listen.undone, w_ms, n) if listen.undone else None
+    dur = listen.duration_ms
+    frac, min_reach = cfg.coverage_fraction, cfg.min_reach_ms
+    for w in range(trav[0][0] // w_ms, n):
         ws, we = w * w_ms, (w + 1) * w_ms
-        if listen.duration_ms:
-            we = min(we, listen.duration_ms)
-        if we <= ws or overlap(trav, ws, we) < min(cfg.min_reach_ms, we - ws):
+        if dur and we > dur:
+            we = dur
+        if we <= ws or reach[w] < min(min_reach, we - ws):
             continue
-        need = cfg.coverage_fraction * (we - ws)
-        out.append(WindowFlags(
-            index=w, start_ms=ws, end_ms=we,
-            played=overlap(listen.heard, ws, we) >= need,
-            skipped=overlap(skipped, ws, we) >= need,
-            replayed=overlap(listen.replays, ws, we) >= need,
-            undone=overlap(listen.undone, ws, we) >= need,
-        ))
-    return out
+        need = frac * (we - ws)
+        yield (w, ws, we, heard[w] >= need, skip is not None and skip[w] >= need,
+               replay is not None and replay[w] >= need, undo is not None and undo[w] >= need)
+
+
+def bin_coverage(intervals: Iterable[Interval], window_ms: int, n_windows: int) -> list[int]:
+    """Milliseconds of ``intervals`` (disjoint) falling in each window ``0..n_windows-1``."""
+    cov = [0] * n_windows
+    for s, e in intervals:
+        w = s // window_ms
+        while s < e and w < n_windows:
+            b = min(e, (w + 1) * window_ms)
+            cov[w] += b - s
+            s, w = b, w + 1
+    return cov
 
 
 def classify_next(position_ms: int, duration_ms: int | None, cfg: InterpretConfig = DEFAULT_CONFIG) -> str:
