@@ -84,6 +84,27 @@ def load_ratings(adapters, kind: str) -> list[dict]:
     raise ValueError(kind)
 
 
+def set_aside_superseded(out: Path, model_version: str) -> Path | None:
+    """Keep a checkpoint trained on another embedding version for diagnosis instead of overwriting it."""
+    import torch
+
+    if not out.exists():
+        return None
+    try:
+        prev = torch.load(out, map_location="cpu", weights_only=True).get("embedding_model")
+    except Exception:
+        prev = "unreadable"
+    if prev == model_version:
+        return None
+    tag = str(prev).replace("@", "_").replace("/", "_")
+    kept = out.with_name(f"{out.stem}.superseded-{tag}.pt")
+    out.replace(kept)
+    if out.with_suffix(".npz").exists():
+        out.with_suffix(".npz").replace(kept.with_suffix(".npz"))
+    log.warning("kept checkpoint trained on %s as %s", prev, kept.name)
+    return kept
+
+
 @dataclass
 class TrainResult:
     kind: str
@@ -184,6 +205,7 @@ def train(adapters, kind: str = "synthetic", model_version: str | None = None, e
         truth_cos = float(np.corrcoef(s_all, planted)[0, 1])
     out = adapters.profile.data_dir / "models" / "taste" / f"{VERSION}-{kind}-w{width}.pt"
     out.parent.mkdir(parents=True, exist_ok=True)
+    set_aside_superseded(out, mv)
     torch.save({"state_dict": net.state_dict(), "width": width, "dim": X.shape[1], "kind": kind,
                 "synthetic": kind == "synthetic", "embedding_model": mv, "version": VERSION}, out)
     np.savez(out.with_suffix(".npz"), **{k: v.detach().float().cpu().numpy() for k, v in net.state_dict().items()})

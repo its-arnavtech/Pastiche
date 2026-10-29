@@ -76,3 +76,15 @@ def test_nonfinite_embedding_is_rejected(fake_embeddings):
     np.save(root / "stem0.npy", values)
     with pytest.raises(ValueError, match="nonfinite CLAP"):
         taste.load_window_vectors(a, mv)
+
+
+def test_checkpoint_from_other_embedding_version_is_kept(tmp_path):
+    import torch
+
+    out = tmp_path / "taste-mlp-v1-synthetic-w256.pt"
+    torch.save({"embedding_model": "clap@old"}, out)
+    np.savez(out.with_suffix(".npz"), w=np.zeros(1))
+    kept = taste.set_aside_superseded(out, "clap@new")
+    assert kept is not None and kept.exists() and kept.with_suffix(".npz").exists() and not out.exists()
+    torch.save({"embedding_model": "clap@new"}, out)
+    assert taste.set_aside_superseded(out, "clap@new") is None and out.exists()
