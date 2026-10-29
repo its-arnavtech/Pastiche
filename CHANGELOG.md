@@ -64,6 +64,86 @@ CPU half-autocast quiet-audio regression, trained-model PyTorch/NumPy/OpenVINO p
 
 URGENT opus-cc: the embedding process loaded the old code. Checkpoint-stop and restart embedding under the new logmel-f32-v2 version, then retrain before using the taste checkpoint. Old files/index are retained. The new version isolates the corrupt cache/index. CPU/NPU locks remain yours; gpt-sol started no GPU jobs. Measured lane performance still uses explicitly labeled heuristic fitness and the seeded random ReLU probe.
 
+## 2026-10-29T05:24:32Z cursor-2 [handoff] 20261029-052432_cursor-2_insight-handoff
+
+Branch: `cursor/insight-agents-442b`. Tasks: T-027, T-028, T-029.
+
+### What changed
+
+Insight layer is done against MockLLM. For opus-cc: T-028 is an Ollama LLMClient with complete(prompt, system=None, **kw) and available(); T-029 is the nightly job that persists InsightState and supplies TrackFeatures.window_features from the catalog. Both signatures are in docs/decisions/0020. The inbox already reads inbox_view through the mock backend. No torch and no new packages.
+
+### Why
+
+The layer must not import or edit the core. A real model and the scheduler belong to opus-cc.
+
+### How to verify
+
+Same suite as the feat entry. Surfaced insights over 5 synthetic seasons: precision 0.936, recall 0.975. Daily budget 30; observed max 23 calls in a night; a warm cache serves the season with 0 calls.
+
+### Next / handoff
+
+opus-cc: T-028 then T-029.
+
+## 2026-10-29T05:24:32Z cursor-2 [decision] 20261029-052432_cursor-2_insight-defaults
+
+Branch: `cursor/insight-agents-442b`. Tasks: T-027, T-028, T-029.
+
+### What changed
+
+Decision 0020 records the LLMClient, TrackFeatures and run_nightly signatures the core must provide. Decision 0021 records every default: confound rules, daily cap, not-sure delay, threshold floors and ceilings, the update rule, and the measured call budget.
+
+### Why
+
+The brief requires a decision record for every default and the exact Protocol signatures assumed for opus-cc. Numbered 0020/0021 so they do not collide with decisions 0018/0019 on the unmerged recipe-planner branch.
+
+### How to verify
+
+Docs only; signatures match src/remixer/insights/llm.py, evidence.py and pipeline.py.
+
+### Next / handoff
+
+Handoff.
+
+## 2026-10-29T05:24:32Z cursor-2 [feat] 20261029-052432_cursor-2_insight-agents
+
+Branch: `cursor/insight-agents-442b`. Tasks: T-027.
+
+### What changed
+
+Insight layer in src/remixer/insights/: LLMClient protocol and MockLLM; Analyst, Skeptic and Narrator as pure functions with schema-validated JSON and deterministic fallbacks; lifecycle proposed/shown/confirmed/dismissed/not_sure delivered only to the passive inbox (one new insight a day, 7-day not-sure delay, dismissal suppresses the window); bounded per-user threshold updates; detector pre-filter, input-hash cache, per-track batching and a 30-call daily budget. Wired into the existing mock inbox. No new dependencies.
+
+### Why
+
+Skip candidates should become a sentence the user can confirm, and confounds (intro, shuffle, time of day, undos, few listens, one session) should be rejected before they influence selection.
+
+### How to verify
+
+uv run pytest -o addopts='' -m 'not scale': 283 passed, 1 skipped, 1 deselected. tests/insights: 35 passed. 5-seed confound season: precision 0.936, recall 0.975, 141 LLM calls per season, busiest night 23, warm-cache replay 0 calls.
+
+### Next / handoff
+
+Decisions 0020/0021 and opus-cc tasks T-028, T-029.
+
+## 2026-10-29T05:17:48Z cursor-2 [handoff] 20261029-051748_cursor-2_takeover-t-027
+
+Branch: `cursor/insight-agents-442b`. Tasks: T-027.
+
+### What changed
+
+cursor-2 took over T-027 from cursor-opus.
+
+### Why
+
+cursor-opus stopped at a usage limit with the insight layer uncommitted: roles, pipeline and inbox wiring exist, tests and decision records do not.
+
+### How to verify
+
+python scripts/agentctl.py task list
+
+### Next / handoff
+
+cursor-opus: check the task log before resuming anything on T-027.
+
 ## 2026-10-29T05:09:41Z gpt-sol [fix] 20261029-050941_gpt-sol_bench-consumes-cpu-tuning
 
 Branch: `dev`. Tasks: T-013, T-007.

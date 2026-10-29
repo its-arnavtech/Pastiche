@@ -10,20 +10,26 @@ Serves ``web/`` plus:
     GET  /api/ratings           persistent rating state per track, derived from the log
     GET  /api/insights          passive insights inbox with the user's answers applied
 
-Insights come from the real detector run over a seeded synthetic history of the mock tracks
-(``synthetic=true``, kept in memory, never written to the log).
+Insights come from the T-027 insight pipeline (detector, confound rules, Analyst, Skeptic and
+Narrator on a deterministic ``MockLLM``). It is replayed night by night over a seeded synthetic
+history of the mock tracks (``synthetic=true``, kept in memory, never written to the log), so the
+daily cap spreads deliveries across days. Answer events from the log are applied on every request:
+"No" dismisses, "Not sure yet" leaves the pending count until its ask-again day, and only "Yes"
+confirms.
 
 Run: ``uv run python web/mock_server.py --port 8765`` then open http://127.0.0.1:8765/.
 """
 from __future__ import annotations
 
 import argparse
+import copy
 import io
 import json
 import math
 import os
 import sys
 import threading
+import time
 import wave
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -37,9 +43,15 @@ if str(REPO_ROOT / "src") not in sys.path:
 
 import remixer  # noqa: E402
 from remixer.analytics.events import Event, validate_event  # noqa: E402
-from remixer.analytics.heatmap import build_heatmap  # noqa: E402
-from remixer.analytics.simulate import TrackSpec, iter_sessions  # noqa: E402
-from remixer.fatigue.insights import apply_answer_events, insights_from_candidates  # noqa: E402
+from remixer.analytics.simulate import WINDOW_MS, TrackSpec, iter_sessions  # noqa: E402
+from remixer.insights import (  # noqa: E402
+    InsightState, MockLLM, StaticFeatures, WindowFeatures, apply_answers, inbox_view, run_nightly,
+)
+from remixer.insights.evidence import local_day  # noqa: E402
+from remixer.insights.lifecycle import deliver  # noqa: E402
+from remixer.insights.mock import heuristic_script  # noqa: E402
+
+DAY_MS = 86_400_000
 
 SAMPLE_RATE = 11_025
 TIRED_VISIBLE_MS = 3 * 86_400_000
@@ -67,6 +79,15 @@ def track_spec(t: dict) -> TrackSpec:
             runs.append((start, w))
             start = None
     return TrackSpec(t["track_id"], t["track_version"], t["duration_ms"], t["source_kind"], tuple(runs))
+
+
+def track_features(t: dict) -> list[WindowFeatures]:
+    """What the synthesizer plays per 5-second window: triads, or a louder square-wave cluster."""
+    n = -(-t["duration_ms"] // WINDOW_MS)
+    return [WindowFeatures(w, -12.0 if w in t["harsh"] else -18.0, None,
+                           "harsh" if w in t["harsh"] else "triads",
+                           frozenset({"harsh synths"} if w in t["harsh"] else {"triads"}))
+            for w in range(n)]
 
 
 def synthesize(t: dict) -> bytes:
@@ -104,12 +125,31 @@ class MockBackend:
         self.lock = threading.Lock()
         self.audio: dict[str, bytes] = {}
         self.tracks = {t["track_id"]: t for t in MOCK_TRACKS}
-        self.base_insights = self._seed_insights(seed_sessions)
+        self.base_state, self.history_end_ms = self._seed_insights(seed_sessions)
 
-    def _seed_insights(self, n_sessions: int):
+    def _seed_insights(self, n_sessions: int, max_extra_nights: int = 30) -> tuple[InsightState, int]:
+        """Replay the nightly pipeline over the synthetic history, then until the queue is delivered."""
         lib = [track_spec(t) for t in MOCK_TRACKS]
         history = [e for s in iter_sessions(lib, n_sessions, seed=7, tracks_per_session=(2, 4)) for e in s]
-        return insights_from_candidates(build_heatmap(history).candidates())
+        features = StaticFeatures({(t["track_id"], t["track_version"]): track_features(t) for t in MOCK_TRACKS})
+        llm = MockLLM(heuristic_script)
+        first, last = min(e.wall_time for e in history), max(e.wall_time for e in history)
+        state = InsightState()
+        now = first - first % DAY_MS + DAY_MS + 3 * 3_600_000
+        while now < last + DAY_MS or (max_extra_nights > 0 and any(
+                r.state == "proposed" for r in state.records.values())):
+            if now >= last + DAY_MS:
+                max_extra_nights -= 1
+            state, _ = run_nightly(history, state, llm, now, features)
+            now += DAY_MS
+        return state, now
+
+    def insight_state(self, now_ms: int | None = None) -> InsightState:
+        state = copy.deepcopy(self.base_state)
+        apply_answers(state, [Event.from_dict(e) for e in self.events() if e["event_type"].startswith("insight_")])
+        now_ms = max(now_ms or int(time.time() * 1000), self.history_end_ms)
+        state.records, _ = deliver(state.records, local_day(now_ms, 0))
+        return state
 
     def config(self) -> dict:
         return {"project_name": getattr(remixer, "PROJECT_NAME", "remixer"),
@@ -159,16 +199,9 @@ class MockBackend:
                 st["tired_at"] = e["wall_time"]
         return out
 
-    def insights(self) -> list[dict]:
-        evs = [Event.from_dict(e) for e in self.events() if e["event_type"].startswith("insight_")]
-        out = []
-        for i in apply_answer_events(self.base_insights, evs):
-            t = self.tracks.get(i.track_id, {})
-            out.append({"insight_id": i.insight_id, "track_id": i.track_id, "track_version": i.track_version,
-                        "title": t.get("title", i.track_id), "source_kind": t.get("source_kind", "source"),
-                        "start_ms": i.start_ms, "end_ms": i.end_ms, "hypothesis": i.hypothesis,
-                        "answer": i.answer, "confirmed": i.confirmed})
-        return sorted(out, key=lambda x: (x["answer"] in ("yes", "no"), x["insight_id"]))
+    def insights(self, now_ms: int | None = None) -> list[dict]:
+        rows = inbox_view(self.insight_state(now_ms), self.tracks)
+        return sorted(rows, key=lambda x: (x["answer"] in ("yes", "no"), x["insight_id"]))
 
 
 CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",

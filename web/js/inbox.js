@@ -7,7 +7,12 @@ const ANSWERS = [
   ["insight_no", "No, I like it", "no"],
   ["insight_unsure", "Not sure yet", "unsure"],
 ];
-const LABEL = { yes: "Skipping from now on", no: "Kept: you like it", unsure: "Not sure yet" };
+const LABEL = { yes: "Skipping from now on", no: "Kept: you like it", unsure: "Not sure yet: we'll ask again later" };
+
+function statusText(ins) {
+  if (ins.answer === "unsure" && ins.ask_again_on) return `Not sure yet: we'll ask again on ${ins.ask_again_on}`;
+  return ins.answer ? LABEL[ins.answer] : "";
+}
 
 let emitter;
 
@@ -18,11 +23,16 @@ function card(ins) {
   li.innerHTML = `
     <div class="meta"><span class="t"></span><span class="range"></span></div>
     <p class="hypothesis"></p>
+    <p class="why" hidden></p>
     <div class="answers" role="group" aria-label="Your answer"></div>
     <p class="status" aria-live="polite"></p>`;
   li.querySelector(".t").textContent = ins.title;
   li.querySelector(".range").textContent = `${fmt(ins.start_ms)}–${fmt(ins.end_ms)}`;
   li.querySelector(".hypothesis").textContent = ins.hypothesis;
+  if (ins.why) {
+    li.querySelector(".why").textContent = ins.why;
+    li.querySelector(".why").hidden = false;
+  }
   const answers = li.querySelector(".answers");
   for (const [type, label, value] of ANSWERS) {
     const b = document.createElement("button");
@@ -33,7 +43,7 @@ function card(ins) {
     b.onclick = () => answer(ins, type, value, li);
     answers.append(b);
   }
-  li.querySelector(".status").textContent = ins.answer ? LABEL[ins.answer] : "";
+  li.querySelector(".status").textContent = statusText(ins);
   return li;
 }
 
