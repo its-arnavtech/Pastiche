@@ -1,14 +1,14 @@
 ---
 id: T-003
 title: Guards: disk, battery, thermal
-status: todo
+status: in_progress
 owner: opus-cc
 branch: dev
 lane: none
 depends_on: [T-001]
 owns_paths: [src/remixer/guards.py]
-claimed_at:
-heartbeat_at:
+claimed_at: 2026-10-29T02:30:53Z
+heartbeat_at: 2026-10-29T02:30:53Z
 priority: P0
 ---
 
@@ -23,3 +23,4 @@ Tests for both modes; every long-running worker calls guards.check().
 ## Progress and handoff log
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner opus-cc)
+- 2026-10-29T02:30:53Z opus-cc: claimed
