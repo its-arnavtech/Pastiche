@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import resource
 import sys
 import time
 from collections import Counter
@@ -29,6 +28,12 @@ def _taste(stem_id: str) -> float:
 
 
 def _rss_mb() -> float:
+    if sys.platform == "win32":  # no `resource` module on Windows; psutil exposes the peak working set
+        import psutil
+
+        return psutil.Process().memory_info().peak_wset / (1024 * 1024)
+    import resource
+
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return peak / (1024 * 1024) if sys.platform == "darwin" else peak / 1024
 
