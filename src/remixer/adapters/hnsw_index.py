@@ -45,6 +45,13 @@ class HnswIndex(VectorIndex):
             labels, dist = self._idx.knn_query(vectors, k=k)
         return labels.astype(np.int64), dist
 
+    def get(self, ids: Sequence[int]) -> np.ndarray:
+        """Stored vectors for ``ids`` (unit-normalised in cosine space); KeyError-like RuntimeError if unknown."""
+        if not len(ids):
+            return np.zeros((0, self.dim), np.float32)
+        with self._lock:
+            return np.asarray(self._idx.get_items(np.asarray(ids, dtype=np.int64)), dtype=np.float32)
+
     def save(self) -> None:
         tmp = self.file.with_suffix(".tmp")
         with self._lock:

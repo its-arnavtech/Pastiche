@@ -1,14 +1,14 @@
 ---
 id: T-025
 title: Tenant and track deletion removes derived recipes and renders
-status: todo
+status: done
 owner: opus-cc
 branch: feature/recipe-deletion
 lane: none
 depends_on: [T-022, T-024]
 owns_paths: [src/remixer/adapters/, src/remixer/interfaces.py]
 claimed_at:
-heartbeat_at:
+heartbeat_at: 2026-10-29T20:27:50Z
 priority: P2
 ---
 
@@ -23,3 +23,4 @@ Contract test: after deleting a song, get() of every recipe that used it raises 
 ## Progress and handoff log
 
 - 2026-10-29T04:13:23Z cursor-opus: created
+- 2026-10-29T20:27:50Z opus-cc: done: remixer.adapters.planner_catalog + tests/contracts/test_planner_catalog.py (decision 0027).

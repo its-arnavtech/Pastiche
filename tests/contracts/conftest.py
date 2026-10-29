@@ -72,9 +72,23 @@ def fake_recipe_backend(scratch: Path, tenant_id: str):
     return _FAKE_RECIPES.setdefault((str(scratch), tenant_id), (InMemoryRecipeStore(), LineageIndex()))
 
 
-# (scratch_dir, tenant_id) -> (RecipeStore, Lineage). opus-cc: register the Catalog-backed store here.
+_CATALOGS: list = []
+
+
+def catalog_recipe_backend(scratch: Path, tenant_id: str):
+    """SQLite Catalog store (T-024): one catalog per tenant; reopening is a new connection to the same file."""
+    from remixer.adapters.planner_catalog import SqliteLineage, SqliteRecipeStore
+    from remixer.adapters.sqlite_catalog import SqliteCatalog
+
+    cat = SqliteCatalog(scratch / "catalog-recipes" / tenant_id / "catalog.sqlite")
+    _CATALOGS.append(cat)
+    return SqliteRecipeStore(cat), SqliteLineage(cat)
+
+
+# (scratch_dir, tenant_id) -> (RecipeStore, Lineage).
 RECIPE_BACKENDS: dict[str, Callable] = {
     "in-memory": fake_recipe_backend,
+    "catalog": catalog_recipe_backend,
 }
 
 
@@ -84,3 +98,5 @@ def open_recipes(request, tmp_path):
     yield lambda tenant_id="tenant-a": factory(tmp_path, tenant_id)
     for k in [k for k in _FAKE_RECIPES if k[0] == str(tmp_path)]:
         del _FAKE_RECIPES[k]
+    while _CATALOGS:
+        _CATALOGS.pop().close()

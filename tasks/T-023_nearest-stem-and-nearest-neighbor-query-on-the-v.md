@@ -1,14 +1,14 @@
 ---
 id: T-023
 title: Nearest-stem and nearest-neighbor query on the vector index
-status: todo
+status: done
 owner: opus-cc
 branch: feature/planner-neighbors
 lane: none
 depends_on: [T-022]
 owns_paths: [src/remixer/adapters/, src/remixer/interfaces.py]
 claimed_at:
-heartbeat_at:
+heartbeat_at: 2026-10-29T20:27:50Z
 priority: P1
 ---
 
@@ -23,3 +23,4 @@ Adapters pass a planner run (plan_batch + ban) against a real SqliteCatalog/Hnsw
 ## Progress and handoff log
 
 - 2026-10-29T04:13:22Z cursor-opus: created
+- 2026-10-29T20:27:50Z opus-cc: done: remixer.adapters.planner_catalog + tests/contracts/test_planner_catalog.py (decision 0027).

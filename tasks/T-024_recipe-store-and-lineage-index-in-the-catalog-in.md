@@ -1,14 +1,14 @@
 ---
 id: T-024
 title: Recipe store and lineage index in the Catalog (insert, get by hash, supersede)
-status: todo
+status: done
 owner: opus-cc
 branch: feature/recipe-store
 lane: none
 depends_on: [T-022]
 owns_paths: [src/remixer/adapters/, src/remixer/interfaces.py]
 claimed_at:
-heartbeat_at:
+heartbeat_at: 2026-10-29T20:27:50Z
 priority: P1
 ---
 
@@ -23,3 +23,4 @@ Register the adapter in RECIPE_BACKENDS in tests/contracts/conftest.py; all test
 ## Progress and handoff log
 
 - 2026-10-29T04:13:23Z cursor-opus: created
+- 2026-10-29T20:27:50Z opus-cc: done: remixer.adapters.planner_catalog + tests/contracts/test_planner_catalog.py (decision 0027).
