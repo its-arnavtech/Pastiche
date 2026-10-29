@@ -105,12 +105,12 @@ def synth_block(spec: dict, start: int, count: int) -> dict[str, np.ndarray]:
             "other": _stereo(pad * fade, .45)}
 
 
-def generate_track(spec: TrackSpec, destination: str | Path, block_size: int = 65536) -> dict:
+def generate_track(spec: TrackSpec, destination: str | Path, block_size: int = 65536, *, force: bool = False) -> dict:
     values = spec.resolved()
     identity = hashlib.sha256((VERSION + json.dumps(values, sort_keys=True)).encode()).hexdigest()
     directory = Path(destination) / identity
     checkpoint = directory / "track.json"
-    if checkpoint.exists():
+    if checkpoint.exists() and not force:
         row = json.loads(checkpoint.read_text(encoding="utf-8"))
         if all(Path(path).exists() and file_hash(Path(path)) == row["hashes"][name]
                for name, path in row["paths"].items()):

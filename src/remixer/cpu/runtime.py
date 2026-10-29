@@ -52,8 +52,10 @@ def guarded(destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     if shutil.disk_usage(destination).free < 10 * 1024**3:
         raise OSError("disk floor: less than 10 GiB free; writer paused")
-    # Core guards are being built concurrently. This bridge is replaced with their
-    # public API once available; the standalone disk floor remains defense in depth.
+    from remixer.guards import get_guard
+    decision = get_guard().check()
+    if decision.action in {"pause", "pause_writes"}:
+        raise OSError("shared guard paused writer: " + "; ".join(decision.reasons))
 
 
 class LaneMonitor:
