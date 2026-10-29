@@ -1,14 +1,14 @@
 ---
 id: T-014
 title: Event interpretation + heatmap detector + simulator
-status: todo
+status: in_progress
 owner: cursor-opus
 branch: feature/skip-analytics
 lane: none
 depends_on: [T-001]
 owns_paths: [src/remixer/events/, src/remixer/analytics/heatmap.py, tests/events/]
-claimed_at:
-heartbeat_at:
+claimed_at: 2026-10-29T02:44:59Z
+heartbeat_at: 2026-10-29T02:44:59Z
 priority: P0
 ---
 
@@ -23,3 +23,4 @@ Tests with known skip patterns including undo and burst cases pass.
 ## Progress and handoff log
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner cursor-opus)
+- 2026-10-29T02:44:59Z cursor-opus: claimed
