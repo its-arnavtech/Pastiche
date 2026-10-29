@@ -60,13 +60,157 @@ def last_json(text: str) -> dict:
     raise ValueError("no JSON result in lane output")
 
 
+@dataclass
+class Limits:
+    """Load caps and thermal protection (decision 0025). Zero = no cap / off."""
+    cpu_workers: int = 0
+    gpu_batch: int = 0
+    igpu: bool = True
+    heavy_gpu: bool = True
+    cpu_limit_c: float = 0.0     # CPU package zone (ACPI _TZ.THRM)
+    gpu_limit_c: float = 0.0
+    resume_margin_c: float = 8.0
+    cooldown_c: float = 0.0      # wait for the CPU zone to fall below this before each step
+    cooldown_max_s: float = 300.0
+
+
+def read_temps() -> dict:
+    """CPU package zone and GPU core temperature, best effort."""
+    out = {}
+    try:
+        from remixer.telemetry.win_engines import EngineSampler
+
+        if not hasattr(read_temps, "eng"):
+            read_temps.eng = EngineSampler()
+            read_temps.eng.sample()
+            time.sleep(0.2)
+        out["cpu_c"] = read_temps.eng.sample().get("tz_thrm_c")
+    except Exception:
+        pass
+    try:
+        import pynvml
+
+        pynvml.nvmlInit()
+        out["gpu_c"] = pynvml.nvmlDeviceGetTemperature(pynvml.nvmlDeviceGetHandleByIndex(0),
+                                                        pynvml.NVML_TEMPERATURE_GPU)
+    except Exception:
+        pass
+    return out
+
+
+class ThermalWatch:
+    """Suspends the CPU and NPU lane process trees while the CPU zone or the GPU is over its limit.
+
+    The GPU lane keeps running (its firmware throttles it); the CPU-side lanes are what tipped this
+    chassis into unexpected shutdowns (decision 0025). Every pause and resume is recorded.
+    """
+
+    def __init__(self, limits: Limits, procs: dict, events: list):
+        import threading
+
+        self.l, self.procs, self.events = limits, procs, events
+        self.paused = False
+        self._stop = threading.Event()
+        self._t = threading.Thread(target=self._run, daemon=True)
+
+    def _tree(self, lanes):
+        import psutil
+
+        out = []
+        for lane in lanes:
+            p = self.procs.get(lane)
+            if p is None or p.poll() is not None:
+                continue
+            try:
+                root = psutil.Process(p.pid)
+                out += [root, *root.children(recursive=True)]
+            except psutil.Error:
+                pass
+        return out
+
+    def _set(self, pause: bool, why: dict) -> None:
+        import psutil
+
+        for q in self._tree(("cpu", "npu")):
+            try:
+                q.suspend() if pause else q.resume()
+            except psutil.Error:
+                pass
+        self.paused = pause
+        e = {"t": time.time(), "action": "pause cpu+npu lanes" if pause else "resume", **why}
+        self.events.append(e)
+        log.warning("thermal watch: %s", e)
+
+    def _over(self, c, g) -> bool:
+        return bool((self.l.cpu_limit_c and c is not None and c >= self.l.cpu_limit_c) or
+                    (self.l.gpu_limit_c and g is not None and g >= self.l.gpu_limit_c))
+
+    def _cool(self, c, g) -> bool:
+        m = self.l.resume_margin_c
+        return ((c is None or not self.l.cpu_limit_c or c < self.l.cpu_limit_c - m) and
+                (g is None or not self.l.gpu_limit_c or g < self.l.gpu_limit_c - m))
+
+    def _run(self) -> None:
+        import statistics
+        from collections import deque
+
+        # The ACPI zone spikes by 15-20 C on single boosts even at idle: act on a 10 s rolling median.
+        cpu, gpu = deque(maxlen=5), deque(maxlen=5)
+        while not self._stop.wait(2.0):
+            t = read_temps()
+            if t.get("cpu_c") is not None:
+                cpu.append(t["cpu_c"])
+            if t.get("gpu_c") is not None:
+                gpu.append(t["gpu_c"])
+            if len(cpu) < cpu.maxlen and len(gpu) < gpu.maxlen:
+                continue
+            c = statistics.median(cpu) if cpu else None
+            g = statistics.median(gpu) if gpu else None
+            if not self.paused and self._over(c, g):
+                self._set(True, {"cpu_c": c, "gpu_c": g})
+            elif self.paused and self._cool(c, g):
+                self._set(False, {"cpu_c": c, "gpu_c": g})
+
+    def __enter__(self):
+        if self.l.cpu_limit_c or self.l.gpu_limit_c:
+            self._t.start()
+        return self
+
+    def __exit__(self, *exc):
+        self._stop.set()
+        if self._t.is_alive():
+            self._t.join(timeout=5)
+        if self.paused:
+            self._set(False, {"reason": "step ended"})
+
+
+def cooldown(limits: Limits) -> float:
+    """Block until the CPU zone is below limits.cooldown_c (or the timeout). Returns seconds waited."""
+    if not limits.cooldown_c:
+        return 0.0
+    import statistics
+
+    t0 = time.time()
+    while time.time() - t0 < limits.cooldown_max_s:
+        vals = []
+        for _ in range(5):
+            if (c := read_temps().get("cpu_c")) is not None:
+                vals.append(c)
+            time.sleep(1)
+        if not vals or statistics.median(vals) < limits.cooldown_c:
+            break
+    return round(time.time() - t0, 1)
+
+
 class Lanes:
     """Command builders and result parsers for each lane. Budgets from config/resources.yaml."""
 
-    def __init__(self, profile, out: Path, gpu_batch_max: int, plan: dict[str, list[int]] | None = None):
+    def __init__(self, profile, out: Path, gpu_batch_max: int, plan: dict[str, list[int]] | None = None,
+                 limits: Limits | None = None):
         self.p = profile
         self.out = out
-        self.gpu_batch_max = gpu_batch_max
+        self.limits = limits or Limits()
+        self.gpu_batch_max = min(gpu_batch_max, self.limits.gpu_batch or gpu_batch_max)
         self.plan = plan or {}  # lane -> pinned logical CPUs (decision 0024); {} = OS scheduling
         self.cpu_max = profile.resources.cpu_workers
         # The CPU lane owns this measured recommendation; resource budgets still
@@ -78,6 +222,8 @@ class Lanes:
             pass
         if self.plan.get("cpu"):
             self.cpu_max = len(self.plan["cpu"])  # one render worker per CPU-lane logical CPU at 100 %
+        if self.limits.cpu_workers:
+            self.cpu_max = min(self.cpu_max, self.limits.cpu_workers)
 
     def _pin(self, lane: str, cfg: dict) -> dict:
         if self.plan.get(lane):
@@ -87,6 +233,8 @@ class Lanes:
     def gpu(self, level: float, seconds: float, mode: str = "cycle") -> tuple[list[str], dict]:
         batch = max(1, round(level * self.gpu_batch_max))
         args = ["separate", "--batch", str(batch), "--duration", str(seconds)]
+        if mode != "cycle" and not self.limits.heavy_gpu:
+            mode = "cycle"  # heavy htdemucs_ft draws the most power; disabled under thermal limits
         if mode == "cycle":
             args.append("--corpus-cycle")
         elif mode == "loop":
@@ -102,7 +250,7 @@ class Lanes:
             self._pin("cpu", {"workers": workers, "stage": "render"})
 
     def npu(self, level: float, seconds: float) -> tuple[list[str], dict]:
-        devices = ["NPU"] if level < 0.75 else ["NPU", "GPU.0"]
+        devices = ["NPU"] if level < 0.75 or not self.limits.igpu else ["NPU", "GPU.0"]
         dest = self.out / "lanes" / f"npu-{'-'.join(d.replace('.', '') for d in devices)}-{int(time.time())}"
         return ["npu", "--output", str(dest), "--seconds", str(seconds), "--devices", *devices, "--parallel"], \
             self._pin("npu", {"devices": devices})
@@ -122,8 +270,9 @@ class Lanes:
         raise ValueError(lane)
 
 
-def run_lanes(specs: list[tuple[str, list[str], dict]], seconds: float, log_dir: Path, grace_s: float = 900):
-    """Start every lane, wait for all; return {lane: (ok, result, error)}."""
+def run_lanes(specs: list[tuple[str, list[str], dict]], seconds: float, log_dir: Path, grace_s: float = 900,
+              limits: Limits | None = None, events: list | None = None):
+    """Start every lane, wait for all under the thermal watch; return {lane: (ok, result, error)}."""
     log_dir.mkdir(parents=True, exist_ok=True)
     procs = {}
     env = {**os.environ, "PYTHONUNBUFFERED": "1", "HF_HUB_DISABLE_SYMLINKS_WARNING": "1"}
@@ -138,6 +287,12 @@ def run_lanes(specs: list[tuple[str, list[str], dict]], seconds: float, log_dir:
         procs[lane] = (p, f)
     out = {}
     deadline = time.time() + seconds + grace_s
+    with ThermalWatch(limits or Limits(), {ln: p for ln, (p, _) in procs.items()}, events if events is not None else []):
+        for p, _ in procs.values():
+            try:
+                p.wait(timeout=max(1, deadline - time.time()))
+            except subprocess.TimeoutExpired:
+                pass
     for lane, (p, f) in procs.items():
         try:
             p.wait(timeout=max(1, deadline - time.time()))
@@ -165,7 +320,7 @@ def knee(steps: list[Step]) -> Step | None:
 
 class Bench:
     def __init__(self, adapters, out: Path, step_seconds: float, lanes: tuple[str, ...], owner: str = "opus-cc",
-                 pin: bool = True):
+                 pin: bool = True, limits: Limits | None = None):
         self.a = adapters
         self.out = out
         self.step_seconds = step_seconds
@@ -176,7 +331,10 @@ class Bench:
         from remixer.telemetry.sampler import Sampler
 
         self.sampler = Sampler(out / "telemetry", interval_s=adapters.profile["telemetry"]["interval_s"])
-        self.lanes = Lanes(adapters.profile, out, self._gpu_batch_max(), adapters.compute.core_plan() if pin else {})
+        self.limits = limits or Limits()
+        self.thermal_events: list[dict] = []
+        self.lanes = Lanes(adapters.profile, out, self._gpu_batch_max(), adapters.compute.core_plan() if pin else {},
+                           self.limits)
 
     def _gpu_batch_max(self) -> int:
         try:
@@ -204,14 +362,20 @@ class Bench:
             acquire_locks(tuple(self.lane_names), self.owner, int(seconds // 60) + 45, f"bench {tag}", 0)
         except SystemExit as e:
             log.warning("lock refresh failed: %s", e)
+        waited = cooldown(self.limits)
+        if waited:
+            log.info("cooldown %.0fs before %s (CPU zone %s C)", waited, tag, read_temps().get("cpu_c"))
         self.sampler.tag = tag
         t0 = time.time()
-        results = run_lanes(specs, seconds, self.out / "logs")
+        n_events = len(self.thermal_events)
+        results = run_lanes(specs, seconds, self.out / "logs", limits=self.limits, events=self.thermal_events)
         t1 = time.time()
         self.sampler.tag = ""
         for s in steps:
             ok, res, err = results[s.lane]
             s.t_start, s.t_end, s.ok, s.result, s.error = t0, t1, ok, res, err
+            s.config["thermal_events"] = self.thermal_events[n_events:]
+            s.config["cooldown_s"] = waited
             if ok:
                 s.throughput, s.unit = Lanes.parse(s.lane, res)
             log.info("  %s: ok=%s %.2f %s", s.lane, ok, s.throughput, s.unit)
@@ -296,6 +460,24 @@ def release_locks(lanes, owner: str) -> None:
 
 # ------------------------------------------------------------------ entry
 
+def limits_from_args(args) -> Limits:
+    g = lambda name, default=None: getattr(args, name, default)  # noqa: E731
+    lim = Limits(cpu_workers=8, gpu_batch=8, igpu=False, heavy_gpu=False, cpu_limit_c=97.0, gpu_limit_c=90.0,
+                 cooldown_c=82.0) if g("cool") else Limits()
+    if g("cpu_max_workers"):
+        lim.cpu_workers = args.cpu_max_workers
+    if g("gpu_max_batch"):
+        lim.gpu_batch = args.gpu_max_batch
+    if g("no_igpu"):
+        lim.igpu = False
+    if g("no_heavy"):
+        lim.heavy_gpu = False
+    for name in ("cpu_limit_c", "gpu_limit_c", "cooldown_c"):
+        if g(name) is not None:
+            setattr(lim, name, getattr(args, name))
+    return lim
+
+
 def run(args) -> Path:
     from remixer.adapters import build
     from remixer.bench.report import write_report
@@ -308,12 +490,14 @@ def run(args) -> Path:
     got = acquire_locks(lanes, args.owner, total_min, f"bench stress {ts}", args.wait_locks)
     if not got:
         raise SystemExit("no lane locks available")
-    b = Bench(a, out, args.step_seconds, got, owner=args.owner, pin=not getattr(args, "no_pin", False))
+    b = Bench(a, out, args.step_seconds, got, owner=args.owner, pin=not getattr(args, "no_pin", False),
+              limits=limits_from_args(args))
     meta = {"ts": ts, "lanes": got, "requested_lanes": lanes, "step_seconds": args.step_seconds,
             "sustain_s": args.sustain, "mode": a.profile.mode, "power_plan": power_plan(),
             "resources": {"logical": a.profile.resources.logical_cores, "cpu_workers": a.profile.resources.cpu_workers,
                           "gpu_feeders": a.profile.resources.gpu_feeders, "reserve": a.profile.resources.reserve},
-            "gpu_batch_max": b.lanes.gpu_batch_max, "label": args.label, "core_plan": b.lanes.plan}
+            "gpu_batch_max": b.lanes.gpu_batch_max, "label": args.label, "core_plan": b.lanes.plan,
+            "limits": asdict(b.limits)}
     (out / "meta.json").write_text(json.dumps(meta, indent=2))
     b.sampler.start()
     ramp = None

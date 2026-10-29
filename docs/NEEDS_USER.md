@@ -40,3 +40,15 @@ The merge added dev/optional dependencies (hypothesis, playwright extra). Per th
 `.venv` while other agents' jobs run. When the machine is idle: `uv sync --extra analytics`. Then
 `uv run pytest -m "not scale and not web"` runs the whole suite (212 tests passed in the merge worktree).
 Browser tests additionally need `uv sync --extra web-test` and `uv run playwright install chromium`.
+
+## 4. The laptop powered off twice under the T-018 load (Best performance mode)
+
+Windows logged two unexpected shutdowns (System log, event 6008) during the first two T-018 attempts, both when the
+CPU render lane started after the GPU ramp. The CPU package zone sits at ~79 C idle and reaches 96 C within seconds
+under load. The agents now run with load caps and a thermal watchdog (decision 0025), but the cause is hardware/firmware
+side and only you can act on it:
+
+1. Check the ASUS fan profile (MyASUS / Armoury Crate) is on Performance or Full speed, not Silent/Standard.
+2. Keep the vents clear and the laptop on a hard surface; consider a cooling pad.
+3. Make sure the original (full-wattage) charger is connected; a lower-wattage USB-C charger cannot carry CPU + GPU peaks.
+4. If shutdowns continue, switching Settings > Power mode back to Balanced made round 1 (60-minute sustain) stable.

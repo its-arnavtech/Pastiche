@@ -102,12 +102,21 @@ class EngineSampler:
         if self._pdh.PdhAddEnglishCounterW(self._query, "\Processor Information(_Total)\% Processor Performance",
                                            None, ctypes.byref(self._cpu_perf)) != 0:
             self._cpu_perf = None
+        # ACPI thermal zones (Kelvin): on this ASUS _TZ.THRM tracks the CPU package. No admin rights needed.
+        self._tz = {}
+        for key, path in (("tz_temp", "\Thermal Zone Information(*)\Temperature"),
+                          ("tz_passive", "\Thermal Zone Information(*)\% Passive Limit")):
+            h = wintypes.HANDLE()
+            if self._pdh.PdhAddEnglishCounterW(self._query, path, None, ctypes.byref(h)) == 0:
+                self._tz[key] = h
         self._pdh.PdhCollectQueryData(self._query)
         self._names = dxgi_adapters()
         self.available = True
 
-    def _items(self) -> list[tuple[str, float]]:
+    def _items(self, counter=None) -> list[tuple[str, float]]:
         from ctypes import wintypes
+
+        counter = counter or self._counter
 
         class VALUE(ctypes.Structure):
             _fields_ = [("CStatus", wintypes.DWORD), ("doubleValue", ctypes.c_double)]
@@ -116,12 +125,12 @@ class EngineSampler:
             _fields_ = [("szName", ctypes.c_wchar_p), ("FmtValue", VALUE)]
 
         size, count = wintypes.DWORD(0), wintypes.DWORD(0)
-        st = self._pdh.PdhGetFormattedCounterArrayW(self._counter, PDH_FMT_DOUBLE, ctypes.byref(size),
+        st = self._pdh.PdhGetFormattedCounterArrayW(counter, PDH_FMT_DOUBLE, ctypes.byref(size),
                                                     ctypes.byref(count), None)
         if (st & 0xFFFFFFFF) != PDH_MORE_DATA:
             return []
         buf = (ctypes.c_byte * size.value)()
-        st = self._pdh.PdhGetFormattedCounterArrayW(self._counter, PDH_FMT_DOUBLE, ctypes.byref(size),
+        st = self._pdh.PdhGetFormattedCounterArrayW(counter, PDH_FMT_DOUBLE, ctypes.byref(size),
                                                     ctypes.byref(count), buf)
         if st != 0:
             return []
@@ -154,6 +163,12 @@ class EngineSampler:
             vals = [v for k, v in out.items() if k.startswith(kind + "_")]
             if vals:
                 out[kind] = max(vals)  # busiest engine = adapter utilization (Task Manager convention)
+        for name, value in self._items(self._tz["tz_temp"]) if "tz_temp" in self._tz else []:
+            zone = (name or "").strip("\\").lower().replace("_tz.", "")
+            out[f"tz_{zone}_c"] = round(value - 273.15, 1)
+        for name, value in self._items(self._tz["tz_passive"]) if "tz_passive" in self._tz else []:
+            zone = (name or "").strip("\\").lower().replace("_tz.", "")
+            out[f"tz_{zone}_passive_pct"] = value
         if self._cpu_perf is not None:
             from ctypes import wintypes
 

@@ -78,6 +78,10 @@ class Sampler:
         for k, v in self._eng.sample().items():
             if k in ("igpu", "npu", "igpu_compute", "igpu_3d", "npu_compute"):
                 row[k] = v
+            elif k.startswith("tz_"):
+                row[k] = v
+                if k == "tz_thrm_c" and row.get("cpu_temp_c") is None:
+                    row["cpu_temp_c"] = v  # ACPI CPU package zone when no LibreHardwareMonitor
             elif k == "cpu_perf_pct":
                 row["cpu_perf_pct"] = v
                 if row.get("cpu_mhz"):

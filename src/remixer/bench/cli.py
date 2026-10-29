@@ -46,6 +46,17 @@ def register(sub) -> None:
     s.add_argument("--no-pin", action="store_true", help="OS scheduling instead of per-lane core sets (decision 0024)")
     s.add_argument("--label", default="")
     s.add_argument("--out")
+    t = s.add_argument_group("load caps and thermal protection (decision 0025)")
+    t.add_argument("--cool", action="store_true",
+                   help="preset: cpu<=8 workers, gpu batch<=8, light Demucs only, NPU without iGPU, "
+                        "pause CPU/NPU lanes at CPU zone 97 C or GPU 90 C, cool to 82 C between steps (10 s medians)")
+    t.add_argument("--cpu-max-workers", type=int)
+    t.add_argument("--gpu-max-batch", type=int)
+    t.add_argument("--no-igpu", action="store_true", help="NPU lane never adds the Intel iGPU")
+    t.add_argument("--no-heavy", action="store_true", help="GPU lane never switches to htdemucs_ft + shifts")
+    t.add_argument("--cpu-limit-c", type=float, help="pause CPU/NPU lanes while the CPU zone is at or above this")
+    t.add_argument("--gpu-limit-c", type=float, help="pause CPU/NPU lanes while the GPU is at or above this")
+    t.add_argument("--cooldown-c", type=float, help="before each step, wait until the CPU zone is below this")
     s.set_defaults(fn=cmd_stress)
     r = b.add_parser("report", help="rebuild docs/PEAK_REPORT.md from reports/peak/*")
     r.add_argument("--run", help="re-summarize one run dir first")

@@ -75,3 +75,21 @@ def test_heavy_gpu_steps_use_model_pass_unit():
     heavy = {"stage": "separate_heavy", "steady_rate_x": 7.33, "model_rate_x": 58.62}
     assert Lanes.parse("gpu", heavy) == (58.62, "model-pass audio-s/s")
     assert Lanes.parse("gpu", {"stage": "separate", "steady_rate_x": 61.0, "model_rate_x": 61.0}) == (61.0, "audio-s/s")
+
+
+def test_cool_preset_caps_lanes_and_watch_thresholds(tmp_path):
+    import argparse
+
+    from remixer.bench.stress import Limits, ThermalWatch, limits_from_args
+    from remixer.config import load_profile
+
+    lim = limits_from_args(argparse.Namespace(cool=True, cpu_max_workers=6))
+    assert (lim.cpu_workers, lim.gpu_batch, lim.igpu, lim.heavy_gpu) == (6, 8, False, False)
+    lanes = Lanes(load_profile(), tmp_path, gpu_batch_max=10, plan={"cpu": list(range(6, 20))}, limits=lim)
+    assert lanes.cpu(1.0, 60)[1]["workers"] == 6
+    assert lanes.gpu(1.0, 60, mode="loop")[1] == {"batch": 8, "mode": "cycle"}
+    assert lanes.npu(1.0, 60)[1]["devices"] == ["NPU"]
+    w = ThermalWatch(Limits(cpu_limit_c=97, gpu_limit_c=90), {}, [])
+    assert w._over(97.5, 70) and w._over(80, 91) and not w._over(96, 89)
+    assert not w._cool(92, 70) and w._cool(88, 81) and not w._cool(None, 83)
+    assert limits_from_args(argparse.Namespace()) == Limits()
