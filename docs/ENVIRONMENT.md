@@ -18,6 +18,7 @@ Recorded by `opus-cc` on 2026-10-29 (UTC). Re-run the commands below if hardware
 | NPU | Intel AI Boost, status OK | `Get-PnpDevice` |
 | Power | On AC (`BatteryStatus=2`), battery 98% | `Win32_Battery` |
 | Power plan | Balanced, GUID `381b4222-f694-41f0-9685-ff5bb260df2e` (original, unchanged) | `powercfg /getactivescheme` |
+| Power mode (AC) | **Best performance** overlay `ded574b5-45a0-4f42-8737-46345c09c238`, set by the user before the T-018 peak run (2026-10-29); battery mode unchanged. Agents read it, never write it; `bench stress` records it in each run's meta.json | `HKLM\SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes` value `ActiveOverlayAcPowerScheme` |
 
 `nvidia-smi` at idle showed 60 C, P0, and a nonsensical power reading (`590W / 102W`); the 102 W cap is
 plausible, the 590 W draw is a driver reporting glitch at idle. Telemetry uses pynvml and logs what it gets.
