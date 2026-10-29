@@ -60,3 +60,27 @@ def open_tenant(request, tmp_path):
 @pytest.fixture
 def adapters(open_tenant):
     return open_tenant("tenant-a")
+
+
+_FAKE_RECIPES: dict = {}
+
+
+def fake_recipe_backend(scratch: Path, tenant_id: str):
+    """In-memory reference; 'reopening' a tenant returns the same objects, standing in for durability."""
+    from remixer.planner import InMemoryRecipeStore, LineageIndex
+
+    return _FAKE_RECIPES.setdefault((str(scratch), tenant_id), (InMemoryRecipeStore(), LineageIndex()))
+
+
+# (scratch_dir, tenant_id) -> (RecipeStore, Lineage). opus-cc: register the Catalog-backed store here.
+RECIPE_BACKENDS: dict[str, Callable] = {
+    "in-memory": fake_recipe_backend,
+}
+
+
+@pytest.fixture(params=sorted(RECIPE_BACKENDS))
+def open_recipes(request, tmp_path):
+    factory = RECIPE_BACKENDS[request.param]
+    yield lambda tenant_id="tenant-a": factory(tmp_path, tenant_id)
+    for k in [k for k in _FAKE_RECIPES if k[0] == str(tmp_path)]:
+        del _FAKE_RECIPES[k]
