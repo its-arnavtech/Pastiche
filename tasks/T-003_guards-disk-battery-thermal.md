@@ -1,0 +1,25 @@
+---
+id: T-003
+title: Guards: disk, battery, thermal
+status: todo
+owner: opus-cc
+branch: dev
+lane: none
+depends_on: [T-001]
+owns_paths: [src/remixer/guards.py]
+claimed_at:
+heartbeat_at:
+priority: P0
+---
+
+## Goal
+
+remixer.guards: unleashed by default (log thermals, battery, throttle reasons only); disk floor 10 GB pauses writers and purges data-dir caches; --safe restores conservative guards.
+
+## Definition of done
+
+Tests for both modes; every long-running worker calls guards.check().
+
+## Progress and handoff log
+
+- 2026-10-29T02:29:55Z opus-cc: created (intended owner opus-cc)

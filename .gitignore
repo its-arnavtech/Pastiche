@@ -1,0 +1,24 @@
+# runtime
+data/
+.locks/
+reports/peak/*/raw/
+*.parquet.tmp
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# models / caches
+.cache/
+models/
+*.onnx
+
+# os
+Thumbs.db
+.DS_Store
