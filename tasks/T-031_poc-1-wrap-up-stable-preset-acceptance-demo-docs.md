@@ -1,14 +1,14 @@
 ---
 id: T-031
 title: POC 1 wrap-up: stable preset, acceptance, demo, docs, release
-status: todo
+status: in_progress
 owner: wrapup
 branch: dev
 lane: none
 depends_on: []
 owns_paths: []
-claimed_at:
-heartbeat_at:
+claimed_at: 2026-10-29T22:03:24Z
+heartbeat_at: 2026-10-29T22:03:24Z
 priority: P0
 ---
 
@@ -23,3 +23,4 @@ docs/ACCEPTANCE.md, remixer demo log under reports/demo/, KNOWN_LIMITATIONS, POC
 ## Progress and handoff log
 
 - 2026-10-29T22:03:16Z wrapup: created
+- 2026-10-29T22:03:24Z wrapup: claimed
