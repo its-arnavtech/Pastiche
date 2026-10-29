@@ -1,14 +1,14 @@
 ---
 id: T-016
 title: Player UI with event logging
-status: todo
+status: in_progress
 owner: cursor-opus
 branch: feature/skip-analytics
 lane: none
 depends_on: [T-014]
 owns_paths: [web/, tests/web/]
-claimed_at:
-heartbeat_at:
+claimed_at: 2026-10-29T03:18:55Z
+heartbeat_at: 2026-10-29T03:18:55Z
 priority: P1
 ---
 
@@ -23,3 +23,4 @@ Every control logs the right event; contract tests pass.
 ## Progress and handoff log
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner cursor-opus)
+- 2026-10-29T03:18:55Z cursor-opus: claimed
