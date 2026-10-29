@@ -47,3 +47,32 @@ def test_synthetic_and_real_never_mix(fake_embeddings):
 
 def test_auc():
     assert taste.auc(np.array([.1, .4, .35, .8]), np.array([0, 0, 1, 1])) == 0.75
+
+
+def test_old_version_ratings_do_not_prevent_planting(fake_embeddings, monkeypatch):
+    a, mv = fake_embeddings
+    a.events.append("synthetic_ratings", [{"event_id": "old", "target_id": "old-version-window",
+                                          "rating": "up", "synthetic": True}])
+    # Stop before device allocation: this tests the version boundary, without GPU work.
+    original = taste.synthesize_ratings
+
+    def plant(adapters, ids, vecs, **kwargs):
+        result = original(adapters, ids, vecs, **kwargs)
+        raise RuntimeError("fresh ratings planted")
+
+    monkeypatch.setattr(taste, "synthesize_ratings", plant)
+    with pytest.raises(RuntimeError, match="fresh ratings planted"):
+        taste.train(a, "synthetic", model_version=mv)
+    rows = a.events.read("synthetic_ratings")
+    assert any(r["target_id"].startswith("stem") for r in rows)
+    assert any(r["event_id"].startswith("syn-0-stem") for r in rows)
+
+
+def test_nonfinite_embedding_is_rejected(fake_embeddings):
+    a, mv = fake_embeddings
+    root = a.profile.data_dir / "embeddings" / mv.replace("@", "_")
+    values = np.load(root / "stem0.npy")
+    values[0, 0] = np.nan
+    np.save(root / "stem0.npy", values)
+    with pytest.raises(ValueError, match="nonfinite CLAP"):
+        taste.load_window_vectors(a, mv)

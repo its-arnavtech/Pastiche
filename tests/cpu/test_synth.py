@@ -5,6 +5,18 @@ import numpy as np
 from remixer.synth.lab import Genome, HeuristicScorer, breed, evaluate_genome, random_genome, render_genome
 
 
+class ParentBatchScorer:
+    identity = "fixture-parent-v1"
+    training_kind = "synthetic"
+
+    def __init__(self):
+        self.calls = 0
+
+    def score_batch(self, audios, sample_rate):
+        self.calls += 1
+        return [float(np.mean(np.abs(audio))) for audio in audios]
+
+
 def test_synth_and_fitness_are_reproducible():
     rng = np.random.default_rng(9)
     genome = random_genome(rng)
@@ -31,3 +43,18 @@ def test_evolution_resume_matches_uninterrupted_generations(tmp_path):
     resumed = json.loads((tmp_path / "resumed" / "population.json").read_text())
     assert whole["population"] == resumed["population"]
     assert whole["history"] == resumed["history"]
+
+
+def test_batch_fitness_stays_in_parent_and_pins_model_identity(tmp_path):
+    import json
+    import pytest
+    from remixer.synth.lab import evolve
+    scorer = ParentBatchScorer()
+    result = evolve(tmp_path, generations=1, workers=1, sample_rate=8000, scorer=scorer)
+    assert result["clips"] == 4
+    assert scorer.calls == 1
+    saved = json.loads((tmp_path / "population.json").read_text())
+    assert saved["scorer_identity"] == scorer.identity
+    scorer.identity = "fixture-parent-v2"
+    with pytest.raises(ValueError, match="resume"):
+        evolve(tmp_path, generations=1, workers=1, sample_rate=8000, scorer=scorer, resume=True)

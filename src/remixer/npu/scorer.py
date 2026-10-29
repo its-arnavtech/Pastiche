@@ -23,6 +23,31 @@ class ScorerSpec:
     hidden: int = 256
     batch: int = 128
     seed: int = 0
+    weights_path: str | None = None
+
+    @classmethod
+    def trained(cls, path: Path, batch: int = 128):
+        with np.load(path, allow_pickle=False) as archive:
+            hidden, features = archive["0.weight"].shape
+        return cls(features=features, hidden=hidden, batch=batch, weights_path=str(path.resolve()))
+
+
+def resolve_spec(weights_path: Path | None = None, random_scorer: bool = False) -> ScorerSpec:
+    from remixer.config import data_dir
+    candidate = weights_path or data_dir() / "models/taste/taste-mlp-v1-synthetic-w256.npz"
+    if not random_scorer and candidate.exists():
+        try:
+            from .trained import TasteWeights
+            TasteWeights.load(candidate)
+            return ScorerSpec.trained(candidate)
+        except (OSError, ValueError, KeyError, RuntimeError) as exc:
+            if weights_path is not None:
+                raise
+            import logging
+            logging.getLogger(__name__).warning("trained checkpoint unusable (%s); retaining synthetic load probe", exc)
+    if weights_path is not None and not candidate.exists():
+        raise FileNotFoundError(candidate)
+    return ScorerSpec()
 
 
 def weights(spec: ScorerSpec):
@@ -33,6 +58,9 @@ def weights(spec: ScorerSpec):
 
 
 def reference_score(inputs: np.ndarray, spec: ScorerSpec) -> np.ndarray:
+    if spec.weights_path:
+        from .trained import TasteWeights
+        return TasteWeights.load(spec.weights_path).predict(inputs)
     a, b, c = weights(spec)
     return 1 / (1 + np.exp(-(np.maximum(0, np.maximum(0, inputs @ a) @ b) @ c)))
 
@@ -43,16 +71,33 @@ def export_scorer(destination: Path, spec: ScorerSpec = ScorerSpec()) -> Path:
     if min(spec.features, spec.hidden, spec.batch) < 1:
         raise ValueError("scorer dimensions must be positive")
     destination.mkdir(parents=True, exist_ok=True)
-    a, b, c = weights(spec)
     inputs = op.parameter([spec.batch, spec.features], np.float32, name="embeddings")
-    hidden = op.relu(op.matmul(inputs, op.constant(a), False, False))
-    hidden = op.relu(op.matmul(hidden, op.constant(b), False, False))
-    result = op.sigmoid(op.matmul(hidden, op.constant(c), False, False))
-    model = ov.Model([result], [inputs], "synthetic-scorer-v1")
+    trained = None
+    if spec.weights_path:
+        from .trained import TasteWeights
+        trained = TasteWeights.load(spec.weights_path)
+        if int(trained.metadata["dim"]) != spec.features:
+            raise ValueError("trained scorer dimensions differ from input spec")
+        hidden = inputs
+        for layer in (0, 3, 5):
+            hidden = op.add(op.matmul(hidden, op.constant(trained.arrays[f"{layer}.weight"]), False, True),
+                            op.constant(trained.arrays[f"{layer}.bias"]))
+            if layer != 5:
+                hidden = op.gelu(hidden, "erf")
+        result = op.sigmoid(hidden)
+    else:
+        a, b, c = weights(spec)
+        hidden = op.relu(op.matmul(inputs, op.constant(a), False, False))
+        hidden = op.relu(op.matmul(hidden, op.constant(b), False, False))
+        result = op.sigmoid(op.matmul(hidden, op.constant(c), False, False))
+    version = "trained-gelu-scorer-v1" if trained else "synthetic-scorer-v1"
+    model = ov.Model([result], [inputs], version)
     path = destination / "scorer.xml"
     ov.save_model(model, path, compress_to_fp16=False)
-    atomic_json(destination / "model.json", {**spec.__dict__, "version": "synthetic-scorer-v1", "synthetic": True,
-                                              "trained_taste_model": False, "openvino_version": ov.__version__})
+    atomic_json(destination / "model.json", {**spec.__dict__, "version": version,
+                "synthetic": bool(trained.metadata["synthetic"]) if trained else True,
+                "trained_taste_model": trained is not None, "openvino_version": ov.__version__,
+                "training": trained.metadata if trained else None, "weights_sha256": trained.identity if trained else None})
     return path
 
 
@@ -63,6 +108,8 @@ class OpenVINOScorer:
         self.core = core or ov.Core()
         self.requested_device, self.fallback_reason = device, None
         config = {"INFERENCE_NUM_THREADS": 1} if device == "CPU" else {}
+        if device == "CPU" and spec.weights_path:
+            config["INFERENCE_PRECISION_HINT"] = "f32"
         try:
             if device.startswith("GPU"):
                 if device == "GPU":
@@ -79,7 +126,10 @@ class OpenVINOScorer:
             if device == "CPU":
                 raise
             self.fallback_reason = f"{type(exc).__name__}: {exc}"
-            self.compiled = self.core.compile_model(str(model), "CPU", {"INFERENCE_NUM_THREADS": 1})
+            fallback_config = {"INFERENCE_NUM_THREADS": 1}
+            if spec.weights_path:
+                fallback_config["INFERENCE_PRECISION_HINT"] = "f32"
+            self.compiled = self.core.compile_model(str(model), "CPU", fallback_config)
             self.device = "CPU"
         self.request = self.compiled.create_infer_request()
 
@@ -98,6 +148,8 @@ def benchmark_device(model: Path, spec: ScorerSpec, device: str, seconds: float,
     scorer = OpenVINOScorer(model, spec, device)
     compile_seconds = time.perf_counter() - compile_started
     inputs = np.random.default_rng(17).normal(size=(spec.batch, spec.features)).astype(np.float32)
+    if spec.weights_path:
+        inputs /= np.maximum(np.linalg.norm(inputs, axis=1, keepdims=True), 1e-12)
     expected = reference_score(inputs, spec)
     actual = scorer.score(inputs)
     max_error = float(np.max(np.abs(expected - actual)))
@@ -154,6 +206,8 @@ def benchmark_async(destination: Path, seconds: float = 600, devices: tuple[str,
     destination.mkdir(parents=True, exist_ok=True)
     model = export_scorer(destination, spec)
     inputs = np.random.default_rng(17).normal(size=(spec.batch, spec.features)).astype(np.float32)
+    if spec.weights_path:
+        inputs /= np.maximum(np.linalg.norm(inputs, axis=1, keepdims=True), 1e-12)
     expected = reference_score(inputs, spec)
     entries = []
     for device in devices:
@@ -215,8 +269,12 @@ def main():
     parser.add_argument("--seconds", type=float, default=600)
     parser.add_argument("--devices", nargs="+", default=["NPU", "GPU.0", "CPU"])
     parser.add_argument("--parallel", action="store_true")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--weights", type=Path)
+    selection.add_argument("--random-scorer", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(benchmark(args.output, args.seconds, tuple(args.devices), parallel=args.parallel), indent=2))
+    print(json.dumps(benchmark(args.output, args.seconds, tuple(args.devices), parallel=args.parallel,
+                               spec=resolve_spec(args.weights, args.random_scorer)), indent=2))
 
 
 if __name__ == "__main__":

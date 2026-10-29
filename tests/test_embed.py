@@ -15,6 +15,15 @@ def test_repeat_pad_matches_clap_rule():
     assert repeat_pad(torch.ones(1, 12), 10).shape == (1, 10)
 
 
+def test_log_floor_stays_finite_inside_half_precision_autocast():
+    front = ClapFrontEnd(np.ones((513, 64), dtype=np.float32), "cpu")
+    with torch.autocast("cpu", dtype=torch.float16):
+        features = front(torch.zeros(1, 4800))
+    assert features.dtype == torch.float32
+    assert torch.isfinite(features).all()
+    assert torch.all(features == -100)
+
+
 @pytest.mark.slow
 def test_front_end_matches_feature_extractor():
     transformers = pytest.importorskip("transformers")

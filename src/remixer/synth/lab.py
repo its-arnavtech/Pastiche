@@ -23,6 +23,10 @@ class FitnessScorer(Protocol):
     def score(self, audio: np.ndarray, sample_rate: int) -> float: ...
 
 
+class BatchFitnessScorer(Protocol):
+    def score_batch(self, audios: list[np.ndarray], sample_rate: int) -> list[float]: ...
+
+
 @dataclass(frozen=True)
 class Genome:
     notes: tuple[int, ...]
@@ -115,15 +119,23 @@ def evaluate_genome(job):
             "audio_hash": hashlib.sha256(audio.tobytes()).hexdigest(), "genome": asdict(genome)}
 
 
+def render_candidate(job):
+    genome, sample_rate = job
+    audio = render_genome(genome, sample_rate)
+    return {"audio_hash": hashlib.sha256(audio.tobytes()).hexdigest(), "genome": asdict(genome), "_audio": audio}
+
+
 def evolve(destination: Path, *, generations: int = 10, seconds: float | None = None,
            population_size: int | None = None, workers: int | None = None, seed: int = 0,
-           sample_rate: int = 22050, scorer: FitnessScorer | None = None, resume: bool = False) -> dict:
+           sample_rate: int = 22050, scorer: FitnessScorer | BatchFitnessScorer | None = None, resume: bool = False) -> dict:
     workers = configured_workers(workers)
-    population_size = population_size or workers * 2
+    population_size = population_size or max(4, workers * 2)
     if population_size < 4 or generations < 1 or (seconds is not None and seconds <= 0):
         raise ValueError("population >= 4, generations and seconds positive required")
     scorer = scorer or HeuristicScorer()
     scorer_name = type(scorer).__module__ + "." + type(scorer).__qualname__
+    scorer_identity = getattr(scorer, "identity", scorer_name)
+    batch_fitness = callable(getattr(scorer, "score_batch", None))
     rng = np.random.default_rng(seed)
     destination.mkdir(parents=True, exist_ok=True)
     checkpoint = destination / "population.json"
@@ -131,7 +143,7 @@ def evolve(destination: Path, *, generations: int = 10, seconds: float | None = 
     history, generation = [], 0
     if resume and checkpoint.exists():
         saved = json.loads(checkpoint.read_text())
-        if saved["scorer"] != scorer_name or saved["sample_rate"] != sample_rate:
+        if saved.get("scorer_identity", saved["scorer"]) != scorer_identity or saved["sample_rate"] != sample_rate:
             raise ValueError("resume scorer/sample rate must match checkpoint")
         rng.bit_generator.state = saved["rng_state"]
         population = [Genome.from_dict(value) for value in saved["population"]]
@@ -139,14 +151,24 @@ def evolve(destination: Path, *, generations: int = 10, seconds: float | None = 
         generation, history = saved["generation"], saved["history"]
     clips, new_generations = 0, 0
     with LaneMonitor() as monitor, process_pool(workers) as pool:
-        warm = [pool.submit(evaluate_genome, (population[slot % len(population)], sample_rate, scorer))
+        warm_scorer = HeuristicScorer() if batch_fitness else scorer
+        warm = [pool.submit(evaluate_genome, (population[slot % len(population)], sample_rate, warm_scorer))
                 for slot in range(workers)]
         for future in warm:
             future.result()
         started, started_wall_time = time.perf_counter(), time.time()
         while (time.perf_counter() - started < seconds) if seconds is not None else (new_generations < generations):
             guarded(destination)
-            results = list(pool.map(evaluate_genome, ((genome, sample_rate, scorer) for genome in population)))
+            if batch_fitness:
+                results = list(pool.map(render_candidate, ((genome, sample_rate) for genome in population)))
+                audios = [row.pop("_audio") for row in results]
+                values = scorer.score_batch(audios, sample_rate)
+                if len(values) != len(results) or not np.isfinite(values).all():
+                    raise ValueError("batch fitness must return one finite score per clip")
+                for row, value in zip(results, values):
+                    row["fitness"] = float(value)
+            else:
+                results = list(pool.map(evaluate_genome, ((genome, sample_rate, scorer) for genome in population)))
             results.sort(key=lambda row: (-row["fitness"], row["audio_hash"]))
             elites = [Genome.from_dict(row["genome"]) for row in results[:max(2, len(population)//4)]]
             population = [elites[0], elites[1]]
@@ -162,13 +184,17 @@ def evolve(destination: Path, *, generations: int = 10, seconds: float | None = 
             atomic_replace(best_temp, destination / "best.wav")
             atomic_json(checkpoint, {"generation": generation, "population": [asdict(genome) for genome in population],
                                      "history": history, "rng_state": rng.bit_generator.state,
-                                     "scorer": scorer_name, "sample_rate": sample_rate, "synthetic": True})
+                                     "scorer": scorer_name, "scorer_identity": scorer_identity,
+                                     "training_kind": getattr(scorer, "training_kind", "heuristic"),
+                                     "sample_rate": sample_rate, "synthetic": True})
     elapsed = time.perf_counter() - started
     result = {"stage": "synth", "workers": workers, "generations": new_generations, "clips": clips,
               "timing_started_wall_time": started_wall_time, "timing_ended_wall_time": time.time(),
               "wall_seconds": elapsed, "clips_per_minute": clips * 60 / elapsed,
               "generations_per_second": new_generations / elapsed, "synthetic": True,
-              "scorer": scorer_name, "best_fitness": history[-1]["best_fitness"], **monitor.summary()}
+              "scorer": scorer_name, "scorer_identity": scorer_identity,
+              "training_kind": getattr(scorer, "training_kind", "heuristic"),
+              "best_fitness": history[-1]["best_fitness"], **monitor.summary()}
     atomic_json(destination / "benchmark.json", result)
     return result
 

@@ -41,6 +41,8 @@ def load_window_vectors(adapters, model_version: str) -> tuple[list[str], np.nda
         v = np.load(p)
         if len(v) != len(wids):
             continue
+        if not np.isfinite(v).all():
+            raise ValueError("nonfinite CLAP checkpoint: re-embed with the fp32 log-mel version before training")
         ids.extend(wids)
         vecs.append(v)
     return ids, (np.concatenate(vecs) if vecs else np.zeros((0, 512), np.float16))
@@ -60,7 +62,7 @@ def synthesize_ratings(adapters, ids: list[str], vecs: np.ndarray, frac: float =
     pick = rng.random(len(ids)) < frac
     up = rng.random(len(ids)) < p_up
     now = time.time()
-    events = [{"event_id": f"syn-{seed}-{i}", "target_kind": "window", "target_id": ids[i],
+    events = [{"event_id": f"syn-{seed}-{ids[i]}", "target_kind": "window", "target_id": ids[i],
                "rating": "up" if up[i] else "down", "wall_time": now, "synthetic": True, "seed": seed}
               for i in np.flatnonzero(pick)]
     adapters.events.append("synthetic_ratings", events)
@@ -126,11 +128,11 @@ def train(adapters, kind: str = "synthetic", model_version: str | None = None, e
     ids, vecs = load_window_vectors(adapters, mv)
     if not ids:
         raise SystemExit("no window embeddings: run `remixer embed` first")
-    ratings = load_ratings(adapters, kind)
+    index = {w: i for i, w in enumerate(ids)}
+    ratings = [r for r in load_ratings(adapters, kind) if r["target_id"] in index]
     if kind == "synthetic" and not ratings:
         log.info("no synthetic ratings yet: planting a synthetic taste (%s)", synthesize_ratings(adapters, ids, vecs, seed=seed))
-        ratings = load_ratings(adapters, kind)
-    index = {w: i for i, w in enumerate(ids)}
+        ratings = [r for r in load_ratings(adapters, kind) if r["target_id"] in index]
     pairs = [(index[r["target_id"]], 1.0 if r["rating"] == "up" else 0.0) for r in ratings if r["target_id"] in index]
     if len(pairs) < 50:
         raise SystemExit(f"only {len(pairs)} usable {kind} ratings")
@@ -155,6 +157,8 @@ def train(adapters, kind: str = "synthetic", model_version: str | None = None, e
             b = perm[s:s + batch]
             with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
                 loss = lossf(net(X[tr_i[b]]).squeeze(-1).float(), tr_y[b])
+            if not torch.isfinite(loss):
+                raise ValueError("nonfinite taste loss; refusing to save a corrupt checkpoint")
             opt.zero_grad(set_to_none=True)
             loss.backward()
             opt.step()
@@ -169,6 +173,8 @@ def train(adapters, kind: str = "synthetic", model_version: str | None = None, e
     with torch.no_grad():
         sv = torch.sigmoid(net(X[va_i]).squeeze(-1)).float().cpu().numpy()
     yv = va_y.cpu().numpy()
+    if not np.isfinite(sv).all() or not all(torch.isfinite(v).all() for v in net.state_dict().values()):
+        raise ValueError("nonfinite taste predictions or weights; refusing to save a corrupt checkpoint")
     truth_cos = None
     truth = adapters.profile.data_dir / "state" / f"synthetic_taste_seed{seed}.npy"
     if kind == "synthetic" and truth.exists():

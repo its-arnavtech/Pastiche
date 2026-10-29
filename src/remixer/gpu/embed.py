@@ -32,7 +32,7 @@ N_FFT, HOP = 1024, 480
 def model_version(name: str) -> str:
     import transformers
 
-    return f"{name}@transformers-{transformers.__version__}"
+    return f"{name}@transformers-{transformers.__version__}-logmel-f32-v2"
 
 
 class ClapFrontEnd:
@@ -48,10 +48,13 @@ class ClapFrontEnd:
         """wave: (B, CLAP_LEN) float32 -> (B, 1, frames, 64)."""
         import torch
 
-        spec = torch.stft(wave, N_FFT, HOP, window=self.window, center=True, pad_mode="reflect",
-                          return_complex=True)
-        mel = torch.einsum("bft,fm->bmt", spec.abs().pow(2), self.fb)
-        db = 10.0 * torch.log10(mel.clamp_min(1e-10))
+        # The 1e-10 log floor underflows to zero in fp16. Keep the complete
+        # power/mel/log front end in fp32 even inside encoder autocast.
+        with torch.autocast(wave.device.type, enabled=False):
+            spec = torch.stft(wave.float(), N_FFT, HOP, window=self.window.float(), center=True, pad_mode="reflect",
+                              return_complex=True)
+            mel = torch.einsum("bft,fm->bmt", spec.abs().pow(2), self.fb.float())
+            db = 10.0 * torch.log10(mel.clamp_min(1e-10))
         return db.transpose(1, 2).unsqueeze(1)
 
 
@@ -115,7 +118,10 @@ class Embedder:
             feats = self.front(wave)
             pooled = self.audio(input_features=feats).pooler_output
             z = self.proj(pooled)
-        return F.normalize(z.float(), dim=-1)
+        normalized = F.normalize(z.float(), dim=-1)
+        if not torch.isfinite(normalized).all():
+            raise FloatingPointError("CLAP produced nonfinite embeddings; no checkpoint may be committed")
+        return normalized
 
     def batch_size(self) -> int:
         if self.fixed_batch:
@@ -260,6 +266,8 @@ class Embedder:
             return
         if not cached and st.vectors:
             vecs = np.stack([v for _, v in sorted(st.vectors, key=lambda p: p[0])]).astype(np.float16)
+            if not np.isfinite(vecs).all():
+                raise FloatingPointError("refusing to persist nonfinite CLAP vectors")
             self.vec_root.mkdir(parents=True, exist_ok=True)
             tmp = self.vec_root / f".{st.stem_id}.{os.getpid()}.npy"
             np.save(tmp, vecs)
@@ -293,7 +301,7 @@ class Embedder:
 
     def _index(self):
         if not hasattr(self, "_idx"):
-            self._idx = self.a.vector_index(f"clap-{self.version.split('@')[0].replace('/', '_')}", self.dim)
+            self._idx = self.a.vector_index(f"clap-{self.version.replace('@', '_').replace('/', '_')}", self.dim)
         return self._idx
 
     def close(self) -> None:
