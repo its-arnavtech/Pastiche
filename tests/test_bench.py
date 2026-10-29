@@ -37,6 +37,18 @@ def test_parse_duration():
     assert parse_duration("60m") == 3600 and parse_duration("90s") == 90 and parse_duration("2") == 2
 
 
+def test_cpu_ramp_consumes_the_measured_lane_recommendation(tmp_path):
+    from types import SimpleNamespace
+    state = tmp_path / "cpu-peak/tuning/tuning.json"
+    state.parent.mkdir(parents=True)
+    state.write_text(json.dumps({"best": {"render": {"workers": 12}}}))
+    profile = SimpleNamespace(data_dir=tmp_path, resources=SimpleNamespace(cpu_workers=17))
+    lanes = Lanes(profile, tmp_path / "out", gpu_batch_max=10)
+    args, config = lanes.cpu(1.0, 60)
+    assert lanes.cpu_max == config["workers"] == 12
+    assert args[-1] == "12"
+
+
 def test_report_from_synthetic_run(tmp_path, monkeypatch):
     import remixer.bench.report as rep
 
@@ -57,3 +69,9 @@ def test_report_from_synthetic_run(tmp_path, monkeypatch):
     assert abs(s["steps"][0]["telemetry"]["throttle_sw_thermal_frac"] - 0.5) < 0.02
     text = write_peak_report([s]).read_text()
     assert "| gpu | Demucs separation |" in text and "sw_thermal 5" in text
+
+
+def test_heavy_gpu_steps_use_model_pass_unit():
+    heavy = {"stage": "separate_heavy", "steady_rate_x": 7.33, "model_rate_x": 58.62}
+    assert Lanes.parse("gpu", heavy) == (58.62, "model-pass audio-s/s")
+    assert Lanes.parse("gpu", {"stage": "separate", "steady_rate_x": 61.0, "model_rate_x": 61.0}) == (61.0, "audio-s/s")

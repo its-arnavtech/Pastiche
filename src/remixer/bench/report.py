@@ -36,7 +36,7 @@ def window_stats(t, mask) -> dict:
                        "igpu": ("mean", "max"), "npu": ("mean", "max"), "vram_used_gib": ("max",),
                        "ram_used_gib": ("max",), "swap_used_gib": ("max",), "gpu_temp_c": ("mean", "max"),
                        "gpu_power_w": ("mean", "max"), "gpu_sm_mhz": ("mean", "min", "max"),
-                       "cpu_mhz": ("mean", "min"), "cpu_temp_c": ("mean", "max"),
+                       "cpu_mhz": ("mean", "min"), "cpu_mhz_eff": ("mean", "min", "max"), "cpu_temp_c": ("mean", "max"),
                        "disk_read_mbs": ("mean", "max"), "disk_write_mbs": ("mean", "max")}.items():
         v = _col(sub, name)
         for h in hows:
@@ -80,7 +80,7 @@ def charts(t, steps, out: Path) -> list[str]:
          [("gpu_temp_c", "temp C"), ("gpu_power_w", "power W"), ("gpu_sm_100mhz", "SM clock x100 MHz")]),
         ("memory.png", "Memory (GiB)", [("vram_used_gib", "VRAM"), ("ram_used_gib", "RAM"), ("swap_used_gib", "swap")]),
         ("disk.png", "Disk (MB/s)", [("disk_read_mbs", "read"), ("disk_write_mbs", "write")]),
-        ("cpu_clock.png", "CPU clock (MHz)", [("cpu_mhz", "reported CPU MHz")]),
+        ("cpu_clock.png", "CPU clock (MHz)", [("cpu_mhz", "reported CPU MHz"), ("cpu_mhz_eff", "effective CPU MHz")]),
     ]
     extra = {"gpu_sm_100mhz": (_col(t, "gpu_sm_mhz") / 100) if _col(t, "gpu_sm_mhz") is not None else None}
     for fname, title, series in panels:
@@ -189,7 +189,8 @@ def verdict(run: dict) -> list[str]:
     c = tel.get("cpu_util_mean")
     if c is not None:
         lines.append(f"CPU (22 logical): {c:.0f}% mean ({100 * (tel.get('cpu_util_frac_ge90') or 0):.0f}% of samples at "
-                     f">= 90%), reported clock {tel.get('cpu_mhz_mean')} MHz mean. CPU temperature: "
+                     f">= 90%), effective clock {tel.get('cpu_mhz_eff_mean') or 'not recorded'} MHz mean "
+                     f"(min {tel.get('cpu_mhz_eff_min')}; psutil reports only the {tel.get('cpu_mhz_mean')} MHz base). CPU temperature: "
                      f"{'not available (no LibreHardwareMonitor)' if tel.get('cpu_temp_c_max') is None else str(tel.get('cpu_temp_c_max')) + ' C max'}.")
     if tel.get("igpu_mean") is not None:
         lines.append(f"Intel Arc iGPU: {tel['igpu_mean']:.0f}% mean busiest-engine utilization. NPU utilization is not "
@@ -266,15 +267,15 @@ def write_peak_report(runs: list[dict]) -> Path:
           (" (last two rounds changed the score by less than 3 %)." if converged else "."), ""]
     # every configuration tried
     L += ["## Every configuration tried", "",
-          "| Run | Phase | Lane | Config | Seconds | OK | Throughput | Unit | GPU util mean | CPU util mean | iGPU mean | GPU temp max | GPU W mean | SM MHz mean |",
-          "|---|---|---|---|---:|---|---:|---|---:|---:|---:|---:|---:|---:|"]
+          "| Run | Phase | Lane | Config | Seconds | OK | Throughput | Unit | GPU util mean | CPU util mean | iGPU mean | GPU temp max | GPU W mean | SM MHz mean | CPU MHz eff |",
+          "|---|---|---|---|---:|---|---:|---|---:|---:|---:|---:|---:|---:|---:|"]
     for r in runs:
         for s in r["steps"]:
             t = s.get("telemetry") or {}
             L.append(f"| {r['meta']['ts']} | {s['phase']} | {s['lane']} | {_cfg(s['config'])} | {s['seconds']:.0f} | "
                      f"{'yes' if s['ok'] else 'NO'} | {_fmt(s['throughput'], 2)} | {s['unit']} | {_fmt(t.get('gpu_util_mean'))} | "
                      f"{_fmt(t.get('cpu_util_mean'))} | {_fmt(t.get('igpu_mean'))} | {_fmt(t.get('gpu_temp_c_max'))} | "
-                     f"{_fmt(t.get('gpu_power_w_mean'))} | {_fmt(t.get('gpu_sm_mhz_mean'), 0)} |")
+                     f"{_fmt(t.get('gpu_power_w_mean'))} | {_fmt(t.get('gpu_sm_mhz_mean'), 0)} | {_fmt(t.get('cpu_mhz_eff_mean'), 0)} |")
     L += ["", "## Knees found", ""]
     for r in runs:
         if not r.get("ramp"):

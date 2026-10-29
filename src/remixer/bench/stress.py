@@ -66,6 +66,13 @@ class Lanes:
         self.out = out
         self.gpu_batch_max = gpu_batch_max
         self.cpu_max = profile.resources.cpu_workers
+        # The CPU lane owns this measured recommendation; resource budgets still
+        # cap it, and absent/incomplete tuning leaves the configured ramp intact.
+        try:
+            tuning = json.loads((Path(profile.data_dir) / "cpu-peak/tuning/tuning.json").read_text(encoding="utf-8"))
+            self.cpu_max = min(self.cpu_max, max(1, int(tuning["best"]["render"]["workers"])))
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
 
     def gpu(self, level: float, seconds: float, mode: str = "cycle") -> tuple[list[str], dict]:
         batch = max(1, round(level * self.gpu_batch_max))
@@ -93,6 +100,10 @@ class Lanes:
     @staticmethod
     def parse(lane: str, res: dict) -> tuple[float, str]:
         if lane == "gpu":
+            if res.get("stage") == "separate_heavy":
+                # htdemucs_ft x shifts runs 8 model passes per audio second; report per-pass throughput so
+                # heavy and light steps share one unit (light htdemucs is one pass per audio second).
+                return float(res.get("model_rate_x") or 0), "model-pass audio-s/s"
             return float(res.get("steady_rate_x") or res.get("rate_x") or 0), "audio-s/s"
         if lane == "cpu":
             return float(res.get("audio_seconds_per_second", 0)), "rendered audio-s/s"

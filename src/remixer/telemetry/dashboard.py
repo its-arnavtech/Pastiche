@@ -43,7 +43,7 @@ const g=document.getElementById('grid');P.forEach(([title,series,ymax])=>{if(!se
 if(D.stats){document.getElementById('stats').innerHTML='<div class="card" style="margin-bottom:16px"><table><tr><th>metric</th><th>mean</th><th>p50</th><th>p95</th><th>max</th></tr>'+Object.entries(D.stats).map(([k,v])=>`<tr><td>${k}</td><td>${v.mean}</td><td>${v.p50}</td><td>${v.p95}</td><td>${v.max}</td></tr>`).join('')+'</table></div>'}
 </script></body></html>"""
 
-STAT_COLS = ["gpu_util", "vram_used_gib", "gpu_temp_c", "gpu_power_w", "gpu_sm_mhz", "cpu_util", "cpu_mhz",
+STAT_COLS = ["gpu_util", "vram_used_gib", "gpu_temp_c", "gpu_power_w", "gpu_sm_mhz", "cpu_util", "cpu_mhz", "cpu_mhz_eff",
              "cpu_temp_c", "igpu", "npu", "ram_used_gib", "disk_read_mbs", "disk_write_mbs"]
 
 

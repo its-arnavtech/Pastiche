@@ -78,6 +78,10 @@ class Sampler:
         for k, v in self._eng.sample().items():
             if k in ("igpu", "npu", "igpu_compute", "igpu_3d", "npu_compute"):
                 row[k] = v
+            elif k == "cpu_perf_pct":
+                row["cpu_perf_pct"] = v
+                if row.get("cpu_mhz"):
+                    row["cpu_mhz_eff"] = row["cpu_mhz"] * v / 100
         return row
 
     def _gpu(self) -> dict:
@@ -112,6 +116,9 @@ class Sampler:
         read(("gpu_temp_c",), lambda: pynvml.nvmlDeviceGetTemperature(h, pynvml.NVML_TEMPERATURE_GPU))
         read(("gpu_power_w",), lambda: pynvml.nvmlDeviceGetPowerUsage(h) / 1000)
         read(("gpu_power_limit_w",), lambda: pynvml.nvmlDeviceGetEnforcedPowerLimit(h) / 1000)
+        # An idle Optimus dGPU sometimes reports nonsense power (300+ W on a 95 W part): drop those samples.
+        if out.get("gpu_power_w") is not None and out["gpu_power_w"] > 2 * (out.get("gpu_power_limit_w") or 150):
+            out["gpu_power_w"] = None
         read(("gpu_sm_mhz",), lambda: pynvml.nvmlDeviceGetClockInfo(h, pynvml.NVML_CLOCK_SM))
         read(("gpu_mem_mhz",), lambda: pynvml.nvmlDeviceGetClockInfo(h, pynvml.NVML_CLOCK_MEM))
         read(("gpu_pstate",), lambda: pynvml.nvmlDeviceGetPerformanceState(h))

@@ -97,6 +97,11 @@ class EngineSampler:
         if self._pdh.PdhAddEnglishCounterW(self._query, "\\GPU Engine(*)\\Utilization Percentage", None,
                                            ctypes.byref(self._counter)) != 0:
             return
+        # Effective CPU clock: % Processor Performance x base MHz (psutil reports only the base clock).
+        self._cpu_perf = wintypes.HANDLE()
+        if self._pdh.PdhAddEnglishCounterW(self._query, "\Processor Information(_Total)\% Processor Performance",
+                                           None, ctypes.byref(self._cpu_perf)) != 0:
+            self._cpu_perf = None
         self._pdh.PdhCollectQueryData(self._query)
         self._names = dxgi_adapters()
         self.available = True
@@ -149,4 +154,13 @@ class EngineSampler:
             vals = [v for k, v in out.items() if k.startswith(kind + "_")]
             if vals:
                 out[kind] = max(vals)  # busiest engine = adapter utilization (Task Manager convention)
+        if self._cpu_perf is not None:
+            from ctypes import wintypes
+
+            class VALUE(ctypes.Structure):
+                _fields_ = [("CStatus", wintypes.DWORD), ("doubleValue", ctypes.c_double)]
+
+            v = VALUE()
+            if self._pdh.PdhGetFormattedCounterValue(self._cpu_perf, PDH_FMT_DOUBLE, None, ctypes.byref(v)) == 0:
+                out["cpu_perf_pct"] = v.doubleValue
         return out
