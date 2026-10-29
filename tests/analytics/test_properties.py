@@ -27,6 +27,9 @@ def assert_consistent(events):
     return hb
 
 
+# These check correctness, including during full-system stress; scale tests own
+# performance limits. Scheduling delays must not turn invariants into failures.
+@settings(deadline=None)
 @given(st.lists(st.tuples(st.sampled_from(PLAYBACK_EVENT_TYPES), st.integers(0, 400_000),
                           st.integers(0, 10_000), st.sampled_from(["a", "b"])), max_size=80))
 def test_arbitrary_streams_keep_counts_consistent(steps):
@@ -46,6 +49,7 @@ action = st.one_of(
 )
 
 
+@settings(deadline=None)
 @given(st.integers(20_000, 400_000), st.lists(action, max_size=25),
        st.sampled_from(["end", "next", "previous", "abandon"]))
 def test_player_scripts_keep_counts_consistent(duration, actions, ending):
@@ -70,6 +74,7 @@ def test_player_scripts_keep_counts_consistent(duration, actions, ending):
         assert all(0 <= s < e <= duration for s, e in listen.heard)
 
 
+@settings(deadline=None)
 @given(duration=st.integers(60_000, 400_000), at_frac=st.floats(0.0, 0.8), presses=st.integers(1, 6),
        gap=st.integers(50, 2000), full_listens=st.integers(0, 12), min_listens=st.integers(1, 3))
 def test_window_skipped_once_is_never_flagged(duration, at_frac, presses, gap, full_listens, min_listens):
@@ -86,6 +91,7 @@ def test_window_skipped_once_is_never_flagged(duration, at_frac, presses, gap, f
     assert hb.candidates(DetectorConfig(min_track_listens=min_listens)) == []
 
 
+@settings(deadline=None)
 @given(duration=st.integers(60_000, 400_000), listens=st.lists(
     st.tuples(st.floats(0.0, 0.7), st.integers(1, 5), st.integers(50, 2000), st.integers(0, 5900),
               st.integers(50, 5900)), min_size=1, max_size=10))
