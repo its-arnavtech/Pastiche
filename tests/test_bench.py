@@ -98,4 +98,4 @@ def test_cool_preset_caps_lanes_and_watch_thresholds(tmp_path):
     w = ThermalWatch(Limits(cpu_limit_c=97, gpu_limit_c=90), {}, [])
     assert w._over(97.5, 70) and w._over(80, 91) and not w._over(96, 89)
     assert not w._cool(92, 70) and w._cool(88, 81) and not w._cool(None, 83)
-    assert limits_from_args(argparse.Namespace()) == Limits()
+    assert limits_from_args(argparse.Namespace(unleashed=True)) == Limits()

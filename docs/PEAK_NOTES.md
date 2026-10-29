@@ -61,6 +61,8 @@ Resource maxima across all runs:
 
 If GPU utilization matters more than render throughput, use `--cpu-max-workers 6`. The score is within 1.3 %, and the GPU averages 90.2 %.
 
+**Preset note (decision 0030):** this configuration is now the default preset (`stable` in `profile.yaml`): 8 CPU workers, light Demucs with batch up to 8, NPU only, thermal watchdog on. The old uncapped settings need an explicit `--unleashed`, which prints a warning. The preset's CPU cutoff is 93 C, not the 97 C used in the rounds above: the zone tops out at 95.9 C, so 97 C could never fire. The numbers in this report were measured with 97 C; the 93 C cutoff has had no sustained run of its own.
+
 ## Rounds and what each changed
 
 | Round | Run | Change | Outcome |

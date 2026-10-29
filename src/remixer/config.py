@@ -13,6 +13,8 @@ from typing import Any
 
 import yaml
 
+from remixer.presets import STABLE_DEFAULTS
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -38,7 +40,7 @@ def _deep_merge(base: dict, over: dict) -> dict:
 
 DEFAULT_PROFILE: dict[str, Any] = {
     "name": "local-max",
-    "mode": "unleashed",  # unleashed | safe
+    "mode": "stable",  # stable (default, capped) | unleashed (explicit --unleashed) | safe
     "adapters": {
         "blob_store": "fs",
         "catalog": "sqlite",
@@ -65,6 +67,7 @@ DEFAULT_PROFILE: dict[str, Any] = {
         "embedding_model": "laion/clap-htsat-unfused",
         "window_s": 5.0,
     },
+    "stable": dict(STABLE_DEFAULTS),
     "llm": {"url": "http://127.0.0.1:11434", "model": "llama3.2:3b"},
     "telemetry": {"interval_s": 1.0},
 }
@@ -78,11 +81,13 @@ class Resources:
     gpu_feeders: int = 4
     prefetch_batches: int = 2
     npu_host_threads: int = 1
+    cpu_cap: int | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
     @property
     def cpu_workers(self) -> int:
-        return max(1, self.logical_cores - self.gpu_feeders - self.reserve)
+        n = max(1, self.logical_cores - self.gpu_feeders - self.reserve)
+        return min(n, self.cpu_cap) if self.cpu_cap else n
 
 
 def compute_resources(raw: dict[str, Any] | None = None, logical: int | None = None) -> Resources:
@@ -114,7 +119,7 @@ class Profile:
 
     @property
     def mode(self) -> str:
-        return self.raw.get("mode", "unleashed")
+        return self.raw.get("mode", "stable")
 
     def path(self, name: str) -> Path:
         return self.data_dir / self.raw["paths"][name]
@@ -128,10 +133,14 @@ def load_profile(path: str | Path | None = None, overrides: dict | None = None) 
     raw = _deep_merge(DEFAULT_PROFILE, _load_yaml(path))
     if overrides:
         raw = _deep_merge(raw, overrides)
-    if os.environ.get("REMIXER_SAFE") == "1":
+    if os.environ.get("REMIXER_UNLEASHED") == "1":
+        raw["mode"] = "unleashed"
+    elif os.environ.get("REMIXER_SAFE") == "1":
         raw["mode"] = "safe"
     res_path = REPO_ROOT / "config" / "resources.yaml"
     resources = compute_resources(_load_yaml(res_path))
+    if raw["mode"] != "unleashed":  # the stable preset caps the CPU lane (decision 0030)
+        resources.cpu_cap = int(raw["stable"]["cpu_workers"])
     return Profile(raw=raw, resources=resources, data_dir=data_dir())
 
 

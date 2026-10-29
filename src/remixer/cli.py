@@ -69,7 +69,10 @@ def cmd_resources(args) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="remixer", description=f"{PROJECT_NAME} POC 1")
-    ap.add_argument("--safe", action="store_true", help="conservative guards (default: unleashed)")
+    ap.add_argument("--safe", action="store_true", help="conservative guards (battery pause, GPU 90 C / CPU 100 C)")
+    ap.add_argument("--unleashed", action="store_true",
+                    help="lift the stable preset's caps (default: 8 CPU workers, light Demucs, batch <= 8, NPU only, "
+                         "thermal watchdog). Two uncapped runs shut this laptop down: prints a warning")
     ap.add_argument("-v", "--verbose", action="store_true")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("info", help="profile, resources, devices, queue").set_defaults(fn=cmd_info)
@@ -96,6 +99,10 @@ def main(argv: list[str] | None = None) -> None:
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if args.safe:
         os.environ["REMIXER_SAFE"] = "1"
+    if args.unleashed:
+        from remixer.presets import enable_unleashed
+
+        enable_unleashed()
     from remixer.adapters.local_compute import pin_from_env
 
     if cores := pin_from_env():  # set per lane by `bench stress`; worker processes inherit the mask

@@ -46,10 +46,10 @@ def register(sub) -> None:
     s.add_argument("--no-pin", action="store_true", help="OS scheduling instead of per-lane core sets (decision 0024)")
     s.add_argument("--label", default="")
     s.add_argument("--out")
-    t = s.add_argument_group("load caps and thermal protection (decision 0025)")
-    t.add_argument("--cool", action="store_true",
-                   help="preset: cpu<=8 workers, gpu batch<=8, light Demucs only, NPU without iGPU, "
-                        "pause CPU/NPU lanes at CPU zone 97 C or GPU 90 C, cool to 82 C between steps (10 s medians)")
+    t = s.add_argument_group("load caps and thermal protection (decisions 0025, 0030)")
+    t.add_argument("--cool", action="store_true", help="deprecated no-op: the stable preset is now the default")
+    t.add_argument("--unleashed", action="store_true",
+                   help="NO caps and no watchdog (the old default). Two uncapped runs shut this laptop down; prints a warning")
     t.add_argument("--cpu-max-workers", type=int)
     t.add_argument("--gpu-max-batch", type=int)
     t.add_argument("--no-igpu", action="store_true", help="NPU lane never adds the Intel iGPU")

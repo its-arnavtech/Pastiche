@@ -33,7 +33,7 @@ def test_resources_from_core_count():
 
 def test_profile_defaults_and_overrides(data_dir, monkeypatch):
     p = load_profile()
-    assert p.mode == "unleashed" and p["adapters"]["catalog"] == "sqlite"
+    assert p.mode == "stable" and p["adapters"]["catalog"] == "sqlite"
     assert p.path("catalog") == data_dir / "catalog.sqlite"
     assert load_profile(overrides={"gpu": {"fp16": False}})["gpu"]["fp16"] is False
     monkeypatch.setenv("REMIXER_SAFE", "1")

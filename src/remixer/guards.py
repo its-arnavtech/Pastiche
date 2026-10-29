@@ -1,6 +1,8 @@
 """Run guards, checked by every long-running worker between units of work.
 
-Unleashed (default): thermals, battery and throttle reasons are logged, never acted on. The one
+Stable (default, decision 0030): disk floor 10 GB, plus a "reduce" signal when the 10 s median of the
+CPU zone reaches 93 C (the sensor tops out at 95.9 C, so the old 97 C cutoff could never fire).
+Unleashed (explicit `--unleashed`): thermals, battery and throttle reasons are logged, never acted on. The one
 floor that stays: free disk below 10 GB pauses writers and purges caches inside the data dir.
 Safe (`--safe` / REMIXER_SAFE=1 / profile mode: safe): disk 25 GB, pause on battery, reduce at
 GPU 90 C / CPU 100 C, hard pause at GPU 95 C / CPU 105 C.
@@ -11,7 +13,9 @@ import json
 import logging
 import os
 import shutil
+import statistics
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
@@ -30,6 +34,7 @@ class Limits:
 
 
 UNLEASHED = Limits(10.0, False, None, None, None, None)
+STABLE = Limits(10.0, False, None, None, 93.0, None)
 SAFE = Limits(25.0, True, 90.0, 95.0, 100.0, 105.0)
 
 
@@ -81,9 +86,11 @@ def read_sensors(data_dir: Path) -> Readings:
     except Exception:
         pass
     try:
-        from remixer.telemetry.cpu_temp import read_cpu_temp
+        from remixer.telemetry.cpu_temp import read_cpu_temp, read_zone_temp
 
         r.cpu_temp_c = read_cpu_temp()
+        if r.cpu_temp_c is None:
+            r.cpu_temp_c = read_zone_temp()
     except Exception:
         pass
     return r
@@ -109,11 +116,13 @@ def purge_caches(data_dir: Path) -> int:
 
 
 class Guard:
-    def __init__(self, data_dir: Path, mode: str = "unleashed",
+    def __init__(self, data_dir: Path, mode: str = "stable",
                  sensors: Callable[[Path], Readings] = read_sensors, log_every_s: float = 30.0):
         self.data_dir = Path(data_dir)
         self.mode = mode
-        self.limits = SAFE if mode == "safe" else UNLEASHED
+        self.limits = {"safe": SAFE, "unleashed": UNLEASHED}.get(mode, STABLE)
+        # The ACPI zone spikes 15-20 C on single boosts: stable mode acts on a rolling median.
+        self._cpu_hist: deque[float] = deque(maxlen=5)
         self.sensors = sensors
         self.log_every_s = log_every_s
         self._last_log = 0.0
@@ -121,6 +130,12 @@ class Guard:
 
     def check(self) -> Decision:
         r = self.sensors(self.data_dir)
+        if self.mode == "stable" and r.cpu_temp_c is not None:
+            self._cpu_hist.append(r.cpu_temp_c)
+            if len(self._cpu_hist) >= 3:
+                r.cpu_temp_c = statistics.median(self._cpu_hist)
+            else:
+                r.cpu_temp_c = None  # too few samples to trust a spike
         L = self.limits
         reasons, action = [], "ok"
         if r.free_disk_gb < L.disk_floor_gb:

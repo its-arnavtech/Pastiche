@@ -38,3 +38,24 @@ def read_cpu_temp() -> float | None:
             except ValueError:
                 continue
     return None
+
+
+_zone = {"eng": None, "failed": False}
+
+
+def read_zone_temp() -> float | None:
+    """CPU package temperature from the ACPI thermal zone `_TZ.THRM` (Windows, no admin rights).
+    Single readings spike 15-20 C: callers smooth them (guards.Guard keeps a rolling median)."""
+    if _zone["failed"]:
+        return None
+    try:
+        if _zone["eng"] is None:
+            from remixer.telemetry.win_engines import EngineSampler
+
+            _zone["eng"] = EngineSampler()
+            _zone["eng"].sample()
+            time.sleep(0.2)
+        return _zone["eng"].sample().get("tz_thrm_c")
+    except Exception:
+        _zone["failed"] = True
+        return None

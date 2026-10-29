@@ -462,8 +462,15 @@ def release_locks(lanes, owner: str) -> None:
 
 def limits_from_args(args) -> Limits:
     g = lambda name, default=None: getattr(args, name, default)  # noqa: E731
-    lim = Limits(cpu_workers=8, gpu_batch=8, igpu=False, heavy_gpu=False, cpu_limit_c=97.0, gpu_limit_c=90.0,
-                 cooldown_c=82.0) if g("cool") else Limits()
+    lim = Limits()
+    if not g("unleashed"):  # the stable preset is the default; `--cool` is kept as a no-op alias
+        from remixer.presets import stable_settings
+
+        s = stable_settings()
+        lim = Limits(cpu_workers=s["cpu_workers"], gpu_batch=s["gpu_batch"], igpu="GPU.0" in s["npu_devices"],
+                     heavy_gpu=False, cpu_limit_c=s["cpu_limit_c"] if s["watchdog"] else 0.0,
+                     gpu_limit_c=s["gpu_limit_c"] if s["watchdog"] else 0.0,
+                     resume_margin_c=s["resume_margin_c"], cooldown_c=s["cooldown_c"])
     if g("cpu_max_workers"):
         lim.cpu_workers = args.cpu_max_workers
     if g("gpu_max_batch"):
@@ -479,8 +486,13 @@ def limits_from_args(args) -> Limits:
 
 
 def run(args) -> Path:
-    from remixer.adapters import build
     from remixer.bench.report import write_report
+
+    if getattr(args, "unleashed", False):
+        from remixer.presets import enable_unleashed
+
+        enable_unleashed()  # sets REMIXER_UNLEASHED=1 so the lane subprocesses are uncapped too
+    from remixer.adapters import build
 
     a = build()
     ts = time.strftime("%Y%m%d-%H%M%S")

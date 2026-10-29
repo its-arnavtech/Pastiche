@@ -23,6 +23,10 @@ def configured_workers(requested: int | None = None, *, npu_active: bool = False
     feeders = min(int(config.get("gpu_lane", {}).get("feeder_cores", 4)), max(0, actual - reserve - 1))
     available = max(1, actual - reserve - feeders)
     budget = min(int(config.get("cpu_lane", {}).get("workers", available)), available)
+    from remixer.presets import worker_cap
+
+    if (cap := worker_cap()) is not None:  # stable preset (decision 0030); --unleashed lifts it
+        budget = min(budget, cap)
     lock = REPO_ROOT / ".locks/npu.json"
     if lock.exists():
         from datetime import datetime, timezone

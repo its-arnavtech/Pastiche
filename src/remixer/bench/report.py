@@ -234,8 +234,10 @@ def verdict(run: dict) -> list[str]:
     lines.append(f"RAM peak {tel.get('ram_used_gib_max')} GiB of 23.4 (swap {tel.get('swap_used_gib_max')} GiB); disk write "
                  f"{tel.get('disk_write_mbs_mean')} MB/s mean, {tel.get('disk_write_mbs_max')} MB/s peak.")
     n = len(run.get("guard_interventions") or [])
-    lines.append(f"Watchdog interventions: {n} (unleashed mode: only the 10 GB disk floor can act)." if run["meta"]["mode"] != "safe"
-                 else f"Watchdog interventions: {n} (safe mode).")
+    mode = run["meta"]["mode"]
+    lines.append(f"Watchdog interventions: {n} (safe mode)." if mode == "safe"
+                 else f"Watchdog interventions: {n} (stable preset: the bench thermal watchdog is counted per step)." if mode == "stable"
+                 else f"Watchdog interventions: {n} (unleashed mode: only the 10 GB disk floor can act).")
     return lines
 
 

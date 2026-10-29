@@ -184,6 +184,16 @@ class Separator:
 
         gcfg = adapters.profile["gpu"]
         self.a = adapters
+        from remixer.presets import gpu_batch_cap, stable_settings
+
+        cap = gpu_batch_cap()
+        if cap is not None:  # stable preset: light model only, batch <= cap (decision 0030)
+            if heavy or model == gcfg["heavy_model"]:
+                log.warning("stable preset: heavy Demucs (%s + shifts) replaced by the light model; --unleashed lifts this",
+                            gcfg["heavy_model"])
+                heavy, model, shifts = False, model or stable_settings()["separation_model"], None
+            batch = min(batch, cap) if batch else batch
+        self.batch_cap = cap
         self.heavy = heavy
         name = model or (gcfg["heavy_model"] if heavy else gcfg["separation_model"])
         self.runner = DemucsRunner(name, fp16=gcfg["fp16"], shifts=(shifts or gcfg["heavy_shifts"]) if heavy else 1)
@@ -191,7 +201,8 @@ class Separator:
         from remixer.gpu.vram import BatchSizer
 
         key = f"demucs:{self.runner.version}:fp16={gcfg['fp16']}:shifts={self.runner.shifts}"
-        self.sizer = BatchSizer(adapters.profile.data_dir / "state" / "gpu_sizes.json", key)
+        self.sizer = BatchSizer(adapters.profile.data_dir / "state" / "gpu_sizes.json", key,
+                                max_batch=cap or 64)
         self.fixed_batch = batch
         self.feeders = feeders or adapters.profile.resources.gpu_feeders
         self.stems_root = adapters.profile.data_dir / "stems"
