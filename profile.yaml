@@ -1,0 +1,24 @@
+# Runtime profile for POC 1 (local-max). Unset keys fall back to remixer.config.DEFAULT_PROFILE.
+# Override the file with REMIXER_PROFILE, the data dir with REMIXER_DATA_DIR.
+name: local-max
+mode: unleashed          # unleashed (default: log thermals only) | safe (conservative guards)
+
+adapters:
+  blob_store: fs         # content-addressed files under <data>/blobs
+  catalog: sqlite        # <data>/catalog.sqlite
+  event_sink: parquet    # <data>/events/<stream>/*.parquet, queried with DuckDB
+  vector_index: hnsw     # hnswlib, <data>/vectors
+  job_queue: sqlite      # <data>/jobs.sqlite, leases + retries
+  compute: local         # CUDA via torch + pynvml, CPU via psutil
+  llm: ollama            # phase 4
+
+gpu:
+  separation_model: htdemucs
+  heavy_model: htdemucs_ft
+  heavy_shifts: 2
+  fp16: true
+  embedding_model: laion/clap-htsat-unfused
+  window_s: 5.0
+
+telemetry:
+  interval_s: 1.0

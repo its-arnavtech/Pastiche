@@ -1,14 +1,14 @@
 ---
 id: T-001
 title: Scaffold, interfaces, profile config
-status: in_progress
+status: done
 owner: opus-cc
 branch: dev
 lane: none
 depends_on: []
 owns_paths: [src/remixer/interfaces.py, src/remixer/config.py, src/remixer/adapters/, profile.yaml, pyproject.toml]
 claimed_at: 2026-10-29T02:30:52Z
-heartbeat_at: 2026-10-29T02:30:52Z
+heartbeat_at: 2026-10-29T02:44:40Z
 priority: P0
 ---
 
@@ -24,3 +24,4 @@ uv project (Python 3.11), package src/remixer with PROJECT_NAME constant, the se
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner opus-cc)
 - 2026-10-29T02:30:52Z opus-cc: claimed
+- 2026-10-29T02:44:40Z opus-cc: done: landed in core-skeleton commit; tests/test_core.py

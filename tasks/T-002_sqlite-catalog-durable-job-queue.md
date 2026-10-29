@@ -1,14 +1,14 @@
 ---
 id: T-002
 title: SQLite catalog + durable job queue
-status: in_progress
+status: done
 owner: opus-cc
 branch: dev
 lane: none
 depends_on: [T-001]
 owns_paths: [src/remixer/adapters/sqlite_catalog.py, src/remixer/adapters/sqlite_queue.py]
 claimed_at: 2026-10-29T02:30:52Z
-heartbeat_at: 2026-10-29T02:30:52Z
+heartbeat_at: 2026-10-29T02:44:42Z
 priority: P0
 ---
 
@@ -24,3 +24,4 @@ Jobs survive a forced kill (lease expiry returns them); idempotent enqueue by (k
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner opus-cc)
 - 2026-10-29T02:30:53Z opus-cc: claimed
+- 2026-10-29T02:44:42Z opus-cc: done: landed in core-skeleton commit; tests/test_core.py
