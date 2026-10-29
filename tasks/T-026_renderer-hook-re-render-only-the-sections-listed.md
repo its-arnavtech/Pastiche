@@ -1,14 +1,14 @@
 ---
 id: T-026
 title: Renderer hook: re-render only the sections listed in a patch
-status: todo
+status: done
 owner: opus-cc
 branch: feature/render-patch
 lane: none
 depends_on: [T-022]
 owns_paths: [src/remixer/cpu/, src/remixer/gpu/]
 claimed_at:
-heartbeat_at:
+heartbeat_at: 2026-10-29T20:30:16Z
 priority: P1
 ---
 
@@ -23,3 +23,4 @@ Rendering a patched recipe touches only the listed sections (verified by section
 ## Progress and handoff log
 
 - 2026-10-29T04:13:23Z cursor-opus: created
+- 2026-10-29T20:30:16Z opus-cc: done: remixer.cpu.patch_render: section-cached render via the unchanged render.render(); render_patch renders only listed sections, reuses the rest by section_hash, regeneration sections keep previous audio and are flagged. gpt-sol: no edit to render.py; per-placement effects (e.g. reverb_mix) are outside render()'s vocabulary and are listed as unapplied_effects in the manifest, a follow-up for the renderer owner.
