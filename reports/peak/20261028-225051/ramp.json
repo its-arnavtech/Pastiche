@@ -1,0 +1,15 @@
+{
+  "isolated_knees": {
+    "gpu": {
+      "level": 1.0,
+      "config": {
+        "batch": 10,
+        "mode": "cycle"
+      },
+      "throughput": 30.92,
+      "unit": "audio-s/s"
+    }
+  },
+  "combined": [],
+  "combined_knee": null
+}

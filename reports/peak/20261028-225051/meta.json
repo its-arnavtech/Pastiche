@@ -1,0 +1,21 @@
+{
+  "ts": "20261028-225051",
+  "lanes": [
+    "gpu"
+  ],
+  "requested_lanes": [
+    "gpu"
+  ],
+  "step_seconds": 90.0,
+  "sustain_s": null,
+  "mode": "unleashed",
+  "power_plan": "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced)",
+  "resources": {
+    "logical": 22,
+    "cpu_workers": 17,
+    "gpu_feeders": 4,
+    "reserve": 1
+  },
+  "gpu_batch_max": 10,
+  "label": "gpu isolated ramp (cpu/npu lanes busy with gpt-sol)"
+}

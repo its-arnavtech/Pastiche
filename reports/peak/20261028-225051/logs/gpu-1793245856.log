@@ -1,0 +1,19 @@
+2026-10-28 22:51:30,541 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/htdemucs.yaml "HTTP/1.1 307 Temporary Redirect"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-28 22:51:30,545 WARNING huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-28 22:51:30,561 INFO httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/adefossez/HTDemucs/cbc8a9b1a87023b7fd74e7b3412e6321c0eab003/htdemucs.yaml?%2Fadefossez%2FHTDemucs%2Fresolve%2Fmain%2Fhtdemucs.yaml=&etag=%220d5f2089fa3e1a0335d93de070f6802598cd4a4d%22 "HTTP/1.1 200 OK"
+2026-10-28 22:51:30,638 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/955717e8.safetensors "HTTP/1.1 302 Found"
+2026-10-28 22:51:42,753 INFO remixer.guards: guard ok (unleashed): gpu 73.0 C cpu None C battery=False throttle=[] disk 638 GB
+2026-10-28 22:52:09,989 INFO remixer.gpu.separate: separate: 0.4x realtime, 0 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:52:15,802 INFO remixer.gpu.separate: separate: 10.1x realtime, 0 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:52:20,852 INFO remixer.gpu.separate: separate: 9.3x realtime, 0 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:52:20,877 INFO remixer.guards: guard ok (unleashed): gpu 78.0 C cpu None C battery=False throttle=[] disk 638 GB
+2026-10-28 22:52:26,935 INFO remixer.gpu.separate: separate: 9.6x realtime, 0 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:52:34,215 INFO remixer.gpu.separate: separate: 8.0x realtime, 0 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:52:39,619 INFO remixer.gpu.separate: separate: 8.7x realtime, 1 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:52:46,085 INFO remixer.gpu.separate: separate: 10.9x realtime, 1 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:52:53,250 INFO remixer.gpu.separate: separate: 4.9x realtime, 1 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:52:53,717 INFO remixer.guards: guard ok (unleashed): gpu 72.0 C cpu None C battery=False throttle=[] disk 638 GB
+2026-10-28 22:52:59,147 INFO remixer.gpu.separate: separate: 6.0x realtime, 1 tracks, batch 2, prefetch wait 0.5s
+2026-10-28 22:53:08,045 INFO remixer.gpu.separate: separate: 2.6x realtime, 1 tracks, batch 2, prefetch wait 0.5s
+{"stage": "separate", "tracks": 1, "audio_s": 456.3, "wall_s": 120.7, "rate_x": 3.78, "steady_rate_x": 6.94, "model_rate_x": 6.94, "batches": 39, "batch": 10, "jobs": {"done": 63, "leased": 2, "queued": 435}}

@@ -1,0 +1,158 @@
+[
+  {
+    "phase": "ramp:gpu",
+    "lane": "gpu",
+    "level": 0.25,
+    "config": {
+      "batch": 2,
+      "mode": "cycle",
+      "cores": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "seconds": 90.0,
+    "tag": "ramp:gpu@25",
+    "t_start": 1793284574.0046802,
+    "t_end": 1793284700.4645514,
+    "ok": true,
+    "throughput": 49.16,
+    "unit": "audio-s/s",
+    "result": {
+      "stage": "separate",
+      "tracks": 18,
+      "audio_s": 4270.5,
+      "wall_s": 120.1,
+      "rate_x": 35.56,
+      "steady_rate_x": 49.16,
+      "model_rate_x": 49.16,
+      "batches": 365,
+      "batch": 10,
+      "jobs": {
+        "done": 4500
+      }
+    },
+    "error": ""
+  },
+  {
+    "phase": "ramp:gpu",
+    "lane": "gpu",
+    "level": 0.5,
+    "config": {
+      "batch": 5,
+      "mode": "cycle",
+      "cores": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "seconds": 90.0,
+    "tag": "ramp:gpu@50",
+    "t_start": 1793284700.517126,
+    "t_end": 1793284827.177063,
+    "ok": true,
+    "throughput": 59.2,
+    "unit": "audio-s/s",
+    "result": {
+      "stage": "separate",
+      "tracks": 22,
+      "audio_s": 5089.5,
+      "wall_s": 120.4,
+      "rate_x": 42.27,
+      "steady_rate_x": 59.2,
+      "model_rate_x": 59.2,
+      "batches": 174,
+      "batch": 10,
+      "jobs": {
+        "done": 4500
+      }
+    },
+    "error": ""
+  },
+  {
+    "phase": "ramp:gpu",
+    "lane": "gpu",
+    "level": 0.75,
+    "config": {
+      "batch": 8,
+      "mode": "cycle",
+      "cores": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "seconds": 90.0,
+    "tag": "ramp:gpu@75",
+    "t_start": 1793284827.2136073,
+    "t_end": 1793284953.8015244,
+    "ok": true,
+    "throughput": 63.66,
+    "unit": "audio-s/s",
+    "result": {
+      "stage": "separate",
+      "tracks": 23,
+      "audio_s": 5428.8,
+      "wall_s": 120.6,
+      "rate_x": 45.02,
+      "steady_rate_x": 63.66,
+      "model_rate_x": 63.66,
+      "batches": 116,
+      "batch": 10,
+      "jobs": {
+        "done": 4500
+      }
+    },
+    "error": ""
+  },
+  {
+    "phase": "ramp:gpu",
+    "lane": "gpu",
+    "level": 1.0,
+    "config": {
+      "batch": 10,
+      "mode": "cycle",
+      "cores": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "seconds": 90.0,
+    "tag": "ramp:gpu@100",
+    "t_start": 1793284953.840515,
+    "t_end": 1793285080.2703755,
+    "ok": true,
+    "throughput": 65.24,
+    "unit": "audio-s/s",
+    "result": {
+      "stage": "separate",
+      "tracks": 24,
+      "audio_s": 5499.0,
+      "wall_s": 120.2,
+      "rate_x": 45.76,
+      "steady_rate_x": 65.24,
+      "model_rate_x": 65.24,
+      "batches": 94,
+      "batch": 10,
+      "jobs": {
+        "done": 4500
+      }
+    },
+    "error": ""
+  }
+]

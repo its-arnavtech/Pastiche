@@ -57,7 +57,11 @@ def test_report_from_synthetic_run(tmp_path, monkeypatch):
     (run / "telemetry").mkdir(parents=True)
     pq.write_table(pa.table({"ts": [float(i) for i in range(100)], "tag": ["sustain@100"] * 100,
                              "gpu_util": [95.0] * 100, "cpu_util": [92.0] * 100, "gpu_temp_c": [85.0] * 100,
-                             "gpu_throttle_names": ["sw_thermal", ""] * 50}), run / "telemetry" / "p.parquet")
+                             "gpu_throttle_names": ["sw_thermal", ""] * 50,
+                             "gpu_power_w": [50.0] * 99 + [590.0], "gpu_power_limit_w": [90.0] * 100}),
+                   run / "telemetry" / "p.parquet")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "PEAK_NOTES.md").write_text("# Peak notes\n\nPlain verdict: heat-bound.\n")
     (run / "meta.json").write_text(json.dumps({"ts": "20260101-000000", "lanes": ["gpu"], "mode": "unleashed",
                                                "sustain_s": 90, "power_plan": "x (Balanced)"}))
     (run / "steps.json").write_text(json.dumps([{"phase": "sustain", "lane": "gpu", "level": 1.0, "config": {"batch": 10},
@@ -68,7 +72,9 @@ def test_report_from_synthetic_run(tmp_path, monkeypatch):
     assert s["steps"][0]["telemetry"]["gpu_util_mean"] == 95.0
     assert abs(s["steps"][0]["telemetry"]["throttle_sw_thermal_frac"] - 0.5) < 0.02
     text = write_peak_report([s]).read_text()
-    assert "| gpu | Demucs separation |" in text and "sw_thermal 5" in text
+    assert "| gpu | Demucs separation" in text and "sw_thermal 5" in text
+    assert s["steps"][0]["telemetry"]["gpu_power_w_max"] == 50.0  # 590 W > 2x the 90 W limit: invalid reading
+    assert "Plain verdict: heat-bound." in text and "# Peak notes" not in text
 
 
 def test_heavy_gpu_steps_use_model_pass_unit():

@@ -1,0 +1,200 @@
+2026-10-29 15:03:17,011 INFO remixer: pinned to logical CPUs [0, 1, 2, 3, 4, 5]
+2026-10-29 15:03:22,751 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/htdemucs.yaml "HTTP/1.1 307 Temporary Redirect"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-29 15:03:22,752 WARNING huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-29 15:03:22,774 INFO httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/adefossez/HTDemucs/cbc8a9b1a87023b7fd74e7b3412e6321c0eab003/htdemucs.yaml?%2Fadefossez%2FHTDemucs%2Fresolve%2Fmain%2Fhtdemucs.yaml=&etag=%220d5f2089fa3e1a0335d93de070f6802598cd4a4d%22 "HTTP/1.1 200 OK"
+2026-10-29 15:03:22,837 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/955717e8.safetensors "HTTP/1.1 302 Found"
+2026-10-29 15:03:24,697 INFO remixer.guards: guard ok (unleashed): gpu 63.0 C cpu None C battery=False throttle=[] disk 550 GB
+2026-10-29 15:03:31,779 INFO remixer.gpu.separate: separate: 6.3x realtime, 0 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:03:37,312 INFO remixer.gpu.separate: separate: 67.7x realtime, 1 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:03:42,825 INFO remixer.gpu.separate: separate: 67.9x realtime, 3 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:03:48,445 INFO remixer.gpu.separate: separate: 66.6x realtime, 5 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:03:54,170 INFO remixer.gpu.separate: separate: 65.4x realtime, 6 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:03:55,619 INFO remixer.guards: guard ok (unleashed): gpu 87.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:03:59,233 INFO remixer.gpu.separate: separate: 64.7x realtime, 8 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:04,453 INFO remixer.gpu.separate: separate: 62.8x realtime, 9 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:09,809 INFO remixer.gpu.separate: separate: 61.2x realtime, 10 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:15,132 INFO remixer.gpu.separate: separate: 61.6x realtime, 13 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:20,443 INFO remixer.gpu.separate: separate: 61.7x realtime, 14 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:25,805 INFO remixer.gpu.separate: separate: 61.1x realtime, 15 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:27,660 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:04:31,574 INFO remixer.gpu.separate: separate: 56.8x realtime, 16 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:37,114 INFO remixer.gpu.separate: separate: 59.1x realtime, 18 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:42,620 INFO remixer.gpu.separate: separate: 59.5x realtime, 19 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:48,023 INFO remixer.gpu.separate: separate: 60.6x realtime, 21 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:53,556 INFO remixer.gpu.separate: separate: 59.2x realtime, 22 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:04:58,258 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:04:59,094 INFO remixer.gpu.separate: separate: 59.1x realtime, 24 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:04,720 INFO remixer.gpu.separate: separate: 58.2x realtime, 25 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:10,257 INFO remixer.gpu.separate: separate: 59.2x realtime, 26 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:15,849 INFO remixer.gpu.separate: separate: 58.6x realtime, 28 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:21,359 INFO remixer.gpu.separate: separate: 59.5x realtime, 30 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:26,851 INFO remixer.gpu.separate: separate: 59.7x realtime, 32 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:29,477 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:05:31,953 INFO remixer.gpu.separate: separate: 55.0x realtime, 33 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:37,652 INFO remixer.gpu.separate: separate: 57.5x realtime, 35 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:43,300 INFO remixer.gpu.separate: separate: 58.0x realtime, 36 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:48,850 INFO remixer.gpu.separate: separate: 59.0x realtime, 38 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:54,380 INFO remixer.gpu.separate: separate: 59.2x realtime, 39 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:05:59,964 INFO remixer.gpu.separate: separate: 58.7x realtime, 41 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:00,022 INFO remixer.guards: guard ok (unleashed): gpu 87.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:06:05,572 INFO remixer.gpu.separate: separate: 58.4x realtime, 42 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:11,152 INFO remixer.gpu.separate: separate: 58.7x realtime, 43 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:16,827 INFO remixer.gpu.separate: separate: 57.7x realtime, 45 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:22,445 INFO remixer.gpu.separate: separate: 58.3x realtime, 46 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:27,975 INFO remixer.gpu.separate: separate: 59.2x realtime, 48 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:31,519 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:06:33,151 INFO remixer.gpu.separate: separate: 54.2x realtime, 49 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:38,692 INFO remixer.gpu.separate: separate: 59.1x realtime, 51 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:44,285 INFO remixer.gpu.separate: separate: 58.6x realtime, 52 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:49,784 INFO remixer.gpu.separate: separate: 59.6x realtime, 54 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:06:55,314 INFO remixer.gpu.separate: separate: 59.2x realtime, 55 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:01,026 INFO remixer.gpu.separate: separate: 57.4x realtime, 56 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:02,659 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:07:06,687 INFO remixer.gpu.separate: separate: 57.9x realtime, 58 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:12,177 INFO remixer.gpu.separate: separate: 59.7x realtime, 60 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:17,790 INFO remixer.gpu.separate: separate: 58.4x realtime, 62 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:23,353 INFO remixer.gpu.separate: separate: 58.9x realtime, 64 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:29,085 INFO remixer.gpu.separate: separate: 57.2x realtime, 66 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:34,288 INFO remixer.guards: guard ok (unleashed): gpu 87.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:07:35,099 INFO remixer.gpu.separate: separate: 54.4x realtime, 67 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:40,681 INFO remixer.gpu.separate: separate: 58.7x realtime, 69 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:46,356 INFO remixer.gpu.separate: separate: 57.7x realtime, 70 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:51,878 INFO remixer.gpu.separate: separate: 59.3x realtime, 71 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:07:57,518 INFO remixer.gpu.separate: separate: 58.1x realtime, 73 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:03,156 INFO remixer.gpu.separate: separate: 58.1x realtime, 75 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:05,661 INFO remixer.guards: guard ok (unleashed): gpu 85.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:08:08,938 INFO remixer.gpu.separate: separate: 56.7x realtime, 76 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:14,654 INFO remixer.gpu.separate: separate: 57.3x realtime, 77 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:20,359 INFO remixer.gpu.separate: separate: 57.4x realtime, 79 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:26,069 INFO remixer.gpu.separate: separate: 57.4x realtime, 80 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:31,792 INFO remixer.gpu.separate: separate: 57.3x realtime, 82 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:37,431 INFO remixer.gpu.separate: separate: 58.1x realtime, 84 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:37,745 INFO remixer.guards: guard ok (unleashed): gpu 85.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:08:42,566 INFO remixer.gpu.separate: separate: 54.7x realtime, 85 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:48,107 INFO remixer.gpu.separate: separate: 59.1x realtime, 86 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:53,648 INFO remixer.gpu.separate: separate: 59.1x realtime, 88 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:08:59,416 INFO remixer.gpu.separate: separate: 56.8x realtime, 89 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:04,995 INFO remixer.gpu.separate: separate: 58.7x realtime, 90 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:09,063 INFO remixer.guards: guard ok (unleashed): gpu 88.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:09:10,725 INFO remixer.gpu.separate: separate: 57.2x realtime, 92 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:16,360 INFO remixer.gpu.separate: separate: 58.1x realtime, 93 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:21,987 INFO remixer.gpu.separate: separate: 58.2x realtime, 94 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:27,766 INFO remixer.gpu.separate: separate: 56.7x realtime, 96 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:33,365 INFO remixer.gpu.separate: separate: 58.5x realtime, 97 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:39,055 INFO remixer.gpu.separate: separate: 57.6x realtime, 98 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:41,104 INFO remixer.guards: guard ok (unleashed): gpu 85.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:09:44,285 INFO remixer.gpu.separate: separate: 53.7x realtime, 100 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:49,906 INFO remixer.gpu.separate: separate: 58.3x realtime, 101 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:09:55,651 INFO remixer.gpu.separate: separate: 57.0x realtime, 103 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:01,297 INFO remixer.gpu.separate: separate: 58.0x realtime, 104 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:06,870 INFO remixer.gpu.separate: separate: 58.8x realtime, 106 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:12,549 INFO remixer.gpu.separate: separate: 57.7x realtime, 108 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:12,557 INFO remixer.guards: guard ok (unleashed): gpu 87.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:10:18,073 INFO remixer.gpu.separate: separate: 59.3x realtime, 110 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:23,675 INFO remixer.gpu.separate: separate: 58.5x realtime, 111 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:28,732 INFO remixer.gpu.separate: separate: 55.5x realtime, 113 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:34,483 INFO remixer.gpu.separate: separate: 57.0x realtime, 115 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:40,250 INFO remixer.gpu.separate: separate: 56.8x realtime, 117 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:43,924 INFO remixer.guards: guard ok (unleashed): gpu 89.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:10:45,494 INFO remixer.gpu.separate: separate: 53.5x realtime, 119 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:50,525 INFO remixer.gpu.separate: separate: 55.8x realtime, 120 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:10:56,124 INFO remixer.gpu.separate: separate: 58.5x realtime, 121 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:01,841 INFO remixer.gpu.separate: separate: 57.3x realtime, 123 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:07,577 INFO remixer.gpu.separate: separate: 57.2x realtime, 125 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:13,364 INFO remixer.gpu.separate: separate: 56.6x realtime, 127 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:14,268 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:11:19,097 INFO remixer.gpu.separate: separate: 57.1x realtime, 128 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:24,682 INFO remixer.gpu.separate: separate: 58.7x realtime, 129 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:29,750 INFO remixer.gpu.separate: separate: 55.4x realtime, 131 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:35,335 INFO remixer.gpu.separate: separate: 58.7x realtime, 132 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:41,121 INFO remixer.gpu.separate: separate: 56.6x realtime, 134 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:46,231 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:11:47,073 INFO remixer.gpu.separate: separate: 55.0x realtime, 136 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:52,643 INFO remixer.gpu.separate: separate: 58.8x realtime, 137 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:11:58,289 INFO remixer.gpu.separate: separate: 58.0x realtime, 139 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:03,806 INFO remixer.gpu.separate: separate: 50.9x realtime, 140 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:09,519 INFO remixer.gpu.separate: separate: 57.3x realtime, 141 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:14,582 INFO remixer.gpu.separate: separate: 55.5x realtime, 142 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:17,273 INFO remixer.guards: guard ok (unleashed): gpu 83.0 C cpu None C battery=False throttle=[] disk 550 GB
+2026-10-29 15:12:19,940 INFO remixer.gpu.separate: separate: 52.4x realtime, 144 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:25,269 INFO remixer.gpu.separate: separate: 52.7x realtime, 145 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:30,934 INFO remixer.gpu.separate: separate: 57.8x realtime, 147 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:36,728 INFO remixer.gpu.separate: separate: 56.5x realtime, 149 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:41,825 INFO remixer.gpu.separate: separate: 55.1x realtime, 150 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:46,860 INFO remixer.gpu.separate: separate: 55.8x realtime, 151 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:48,880 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:12:52,055 INFO remixer.gpu.separate: separate: 54.0x realtime, 153 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:12:57,784 INFO remixer.gpu.separate: separate: 57.2x realtime, 154 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:02,802 INFO remixer.gpu.separate: separate: 55.9x realtime, 155 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:07,877 INFO remixer.gpu.separate: separate: 55.3x realtime, 157 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:13,630 INFO remixer.gpu.separate: separate: 56.9x realtime, 158 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:19,210 INFO remixer.gpu.separate: separate: 58.7x realtime, 160 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:19,220 INFO remixer.guards: guard ok (unleashed): gpu 89.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:13:25,070 INFO remixer.gpu.separate: separate: 55.9x realtime, 161 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:30,795 INFO remixer.gpu.separate: separate: 57.2x realtime, 163 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:36,392 INFO remixer.gpu.separate: separate: 58.5x realtime, 164 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:42,090 INFO remixer.gpu.separate: separate: 57.5x realtime, 165 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:47,770 INFO remixer.gpu.separate: separate: 57.7x realtime, 167 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:51,477 INFO remixer.guards: guard ok (unleashed): gpu 87.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:13:53,183 INFO remixer.gpu.separate: separate: 51.9x realtime, 168 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:13:58,791 INFO remixer.gpu.separate: separate: 58.4x realtime, 169 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:04,636 INFO remixer.gpu.separate: separate: 56.0x realtime, 171 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:10,479 INFO remixer.gpu.separate: separate: 56.1x realtime, 173 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:16,183 INFO remixer.gpu.separate: separate: 57.4x realtime, 174 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:21,203 INFO remixer.gpu.separate: separate: 55.9x realtime, 175 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:21,989 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:14:26,321 INFO remixer.gpu.separate: separate: 54.9x realtime, 177 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:31,539 INFO remixer.gpu.separate: separate: 53.8x realtime, 178 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:36,856 INFO remixer.gpu.separate: separate: 52.8x realtime, 179 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:41,966 INFO remixer.gpu.separate: separate: 55.0x realtime, 180 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:47,039 INFO remixer.gpu.separate: separate: 55.4x realtime, 181 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:52,068 INFO remixer.gpu.separate: separate: 55.8x realtime, 183 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:14:53,991 INFO remixer.guards: guard ok (unleashed): gpu 86.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:14:57,442 INFO remixer.gpu.separate: separate: 52.2x realtime, 184 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:02,620 INFO remixer.gpu.separate: separate: 54.2x realtime, 185 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:07,653 INFO remixer.gpu.separate: separate: 55.8x realtime, 186 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:13,014 INFO remixer.gpu.separate: separate: 52.4x realtime, 188 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:18,848 INFO remixer.gpu.separate: separate: 56.1x realtime, 190 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:24,582 INFO remixer.gpu.separate: separate: 57.1x realtime, 191 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:25,410 INFO remixer.guards: guard ok (unleashed): gpu 88.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:15:29,761 INFO remixer.gpu.separate: separate: 54.2x realtime, 193 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:34,767 INFO remixer.gpu.separate: separate: 56.1x realtime, 194 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:39,956 INFO remixer.gpu.separate: separate: 54.1x realtime, 195 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:45,086 INFO remixer.gpu.separate: separate: 54.7x realtime, 196 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:50,407 INFO remixer.gpu.separate: separate: 52.8x realtime, 197 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:56,261 INFO remixer.gpu.separate: separate: 56.0x realtime, 199 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:15:56,579 INFO remixer.guards: guard ok (unleashed): gpu 88.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:16:01,513 INFO remixer.gpu.separate: separate: 53.5x realtime, 201 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:07,289 INFO remixer.gpu.separate: separate: 56.7x realtime, 202 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:12,341 INFO remixer.gpu.separate: separate: 55.6x realtime, 204 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:17,637 INFO remixer.gpu.separate: separate: 53.0x realtime, 206 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:22,814 INFO remixer.gpu.separate: separate: 54.2x realtime, 207 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:27,025 INFO remixer.guards: guard ok (unleashed): gpu 85.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:16:27,860 INFO remixer.gpu.separate: separate: 55.6x realtime, 208 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:33,011 INFO remixer.gpu.separate: separate: 54.5x realtime, 209 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:38,788 INFO remixer.gpu.separate: separate: 56.7x realtime, 211 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:43,867 INFO remixer.gpu.separate: separate: 55.3x realtime, 212 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:49,001 INFO remixer.gpu.separate: separate: 54.7x realtime, 213 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:54,092 INFO remixer.gpu.separate: separate: 55.2x realtime, 214 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:16:57,779 INFO remixer.guards: guard ok (unleashed): gpu 87.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:16:59,430 INFO remixer.gpu.separate: separate: 52.6x realtime, 216 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:04,692 INFO remixer.gpu.separate: separate: 53.3x realtime, 217 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:09,813 INFO remixer.gpu.separate: separate: 54.8x realtime, 218 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:15,553 INFO remixer.gpu.separate: separate: 57.1x realtime, 219 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:21,159 INFO remixer.gpu.separate: separate: 50.1x realtime, 220 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:26,301 INFO remixer.gpu.separate: separate: 54.6x realtime, 222 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:28,837 INFO remixer.guards: guard ok (unleashed): gpu 92.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:17:31,354 INFO remixer.gpu.separate: separate: 55.6x realtime, 224 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:36,425 INFO remixer.gpu.separate: separate: 55.4x realtime, 225 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:41,528 INFO remixer.gpu.separate: separate: 55.0x realtime, 226 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:46,706 INFO remixer.gpu.separate: separate: 54.2x realtime, 227 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:51,880 INFO remixer.gpu.separate: separate: 54.3x realtime, 229 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:56,912 INFO remixer.gpu.separate: separate: 55.8x realtime, 231 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:17:59,949 INFO remixer.guards: guard ok (unleashed): gpu 89.0 C cpu None C battery=False throttle=['sw_thermal'] disk 550 GB
+2026-10-29 15:18:02,466 INFO remixer.gpu.separate: separate: 50.6x realtime, 233 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:18:07,684 INFO remixer.gpu.separate: separate: 53.8x realtime, 234 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:18:12,778 INFO remixer.gpu.separate: separate: 55.1x realtime, 235 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:18:18,605 INFO remixer.gpu.separate: separate: 56.2x realtime, 237 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 15:18:23,729 INFO remixer.gpu.separate: separate: 54.8x realtime, 238 tracks, batch 8, prefetch wait 0.0s
+{"stage": "separate", "tracks": 239, "audio_s": 50965.2, "wall_s": 930.2, "rate_x": 54.79, "steady_rate_x": 56.9, "model_rate_x": 56.9, "batches": 1089, "batch": 10, "jobs": {"done": 4500}}

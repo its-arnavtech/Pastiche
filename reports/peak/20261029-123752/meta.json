@@ -1,0 +1,73 @@
+{
+  "ts": "20261029-123752",
+  "lanes": [
+    "gpu",
+    "cpu",
+    "npu"
+  ],
+  "requested_lanes": [
+    "gpu",
+    "cpu",
+    "npu"
+  ],
+  "step_seconds": 90.0,
+  "sustain_s": 3600.0,
+  "mode": "unleashed",
+  "power_plan": "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced); AC power mode overlay: best performance",
+  "resources": {
+    "logical": 22,
+    "cpu_workers": 17,
+    "gpu_feeders": 4,
+    "reserve": 1
+  },
+  "gpu_batch_max": 8,
+  "label": "T-018 round 2 (cool): pinned lanes, caps cpu8/gpu8 light/NPU only, thermal watchdog, ramp + 60 min sustain",
+  "core_plan": {
+    "gpu": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "cpu": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "npu": [
+      20
+    ],
+    "reserve": [
+      21
+    ]
+  },
+  "limits": {
+    "cpu_workers": 8,
+    "gpu_batch": 8,
+    "igpu": false,
+    "heavy_gpu": false,
+    "cpu_limit_c": 97.0,
+    "gpu_limit_c": 90.0,
+    "resume_margin_c": 8.0,
+    "cooldown_c": 82.0,
+    "cooldown_max_s": 300.0
+  },
+  "sustain_levels": {
+    "gpu": 1.0,
+    "cpu": 0.75,
+    "npu": 0.75
+  }
+}

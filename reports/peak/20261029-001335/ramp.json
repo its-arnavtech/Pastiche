@@ -1,0 +1,66 @@
+{
+  "isolated_knees": {
+    "gpu": {
+      "level": 0.75,
+      "config": {
+        "batch": 8,
+        "mode": "cycle"
+      },
+      "throughput": 61.09,
+      "unit": "audio-s/s"
+    },
+    "cpu": {
+      "level": 1.0,
+      "config": {
+        "workers": 16,
+        "stage": "render"
+      },
+      "throughput": 13.657012415971913,
+      "unit": "rendered audio-s/s"
+    },
+    "npu": null
+  },
+  "combined": [
+    {
+      "level": 0.25,
+      "score": 0.34751397476985524,
+      "ok": false,
+      "lanes": {
+        "gpu": 47.19,
+        "cpu": 3.6884186132456036,
+        "npu": 0.0
+      }
+    },
+    {
+      "level": 0.5,
+      "score": 0.4524009304709644,
+      "ok": false,
+      "lanes": {
+        "gpu": 57.42,
+        "cpu": 5.698772058125164,
+        "npu": 0.0
+      }
+    },
+    {
+      "level": 0.75,
+      "score": 38166.06697869731,
+      "ok": true,
+      "lanes": {
+        "gpu": 61.06,
+        "cpu": 9.265801778023642,
+        "npu": 114496.52296240136
+      }
+    },
+    {
+      "level": 1.0,
+      "score": 25272.656100863718,
+      "ok": true,
+      "lanes": {
+        "gpu": 57.84,
+        "cpu": 12.480508387343903,
+        "npu": 75816.10764930285
+      }
+    }
+  ],
+  "combined_knee": null
+}
