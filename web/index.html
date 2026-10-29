@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Player</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script type="module" src="/js/player.js"></script>
+</head>
+<body>
+  <header class="top">
+    <span class="brand" data-project-name></span>
+    <nav>
+      <a href="/index.html" data-keep-query aria-current="page">Player</a>
+      <a href="/inbox.html" data-keep-query>Insights <span class="count" data-insight-count hidden></span></a>
+    </nav>
+  </header>
+
+  <main class="player">
+    <section class="now" aria-label="Now playing">
+      <div class="art" aria-hidden="true"><div class="ring"></div></div>
+      <div class="info">
+        <span class="kind" id="kind"></span>
+        <h1 id="title">Loading…</h1>
+        <p class="artist"><span id="artist"></span> · <span class="version">version <span id="version"></span></span></p>
+      </div>
+
+      <div class="progress" aria-hidden="true">
+        <div class="track"><div class="bar" id="bar"></div><div class="ticks" id="ticks"></div></div>
+        <div class="times"><span id="elapsed">0:00</span><span id="duration">0:00</span></div>
+      </div>
+
+      <div class="controls" role="group" aria-label="Playback">
+        <button id="prev" aria-label="Previous track" title="Previous (Shift+Left)">
+          <svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>
+        </button>
+        <button id="back" aria-label="Back 5 seconds" title="Back 5 s (Left)">
+          <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg><span>5</span>
+        </button>
+        <button id="play" class="primary" aria-label="Play" title="Play / pause (Space)" data-state="paused">
+          <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        </button>
+        <button id="fwd" aria-label="Forward 5 seconds" title="Forward 5 s (Right)">
+          <svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/></svg><span>5</span>
+        </button>
+        <button id="next" aria-label="Next track" title="Next (Shift+Right)">
+          <svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>
+        </button>
+      </div>
+
+      <div class="rating" role="group" aria-label="Your rating for this track">
+        <button id="rate-up" aria-pressed="false" title="Like (click again to clear)">
+          <svg viewBox="0 0 24 24"><path d="M2 21h4V9H2zm20-11a2 2 0 0 0-2-2h-6.3l1-4.6v-.3a1.5 1.5 0 0 0-.4-1L13.2 1 6.6 7.6A2 2 0 0 0 6 9v10a2 2 0 0 0 2 2h9a2 2 0 0 0 1.8-1.2l3-7.1c.1-.2.2-.5.2-.7z"/></svg>
+          Like
+        </button>
+        <button id="rate-down" aria-pressed="false" title="Dislike (click again to clear)">
+          <svg viewBox="0 0 24 24"><path d="M22 3h-4v12h4zM2 14a2 2 0 0 0 2 2h6.3l-1 4.6v.3c0 .4.2.8.4 1l1.1 1.1 6.6-6.6A2 2 0 0 0 18 15V5a2 2 0 0 0-2-2H7a2 2 0 0 0-1.8 1.2l-3 7.1c-.1.2-.2.5-.2.7z"/></svg>
+          Dislike
+        </button>
+        <button id="rate-tired" aria-pressed="false">
+          <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.4A5.5 5.5 0 0 1 13.4 3.1 9 9 0 0 0 12 3z"/></svg>
+          Tired of this
+        </button>
+      </div>
+    </section>
+
+    <section class="queue" aria-label="Queue">
+      <h2>Queue</h2>
+      <ol id="playlist"></ol>
+    </section>
+  </main>
+
+  <footer class="status">
+    <span id="event-status">0 events logged</span> · endpoint <code id="endpoint"></code> · seeks are fixed at 5 s
+  </footer>
+  <audio id="audio" preload="auto"></audio>
+</body>
+</html>
