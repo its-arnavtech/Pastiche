@@ -1,14 +1,14 @@
 ---
 id: T-021
 title: Recipe planner and ban-and-replace
-status: in_progress
+status: done
 owner: cursor-opus
 branch: feature/recipe-planner
 lane: none
 depends_on: [T-015, T-020]
 owns_paths: [src/remixer/planner/, tests/planner/]
 claimed_at: 2026-10-29T03:52:51Z
-heartbeat_at: 2026-10-29T04:13:33Z
+heartbeat_at: 2026-10-29T04:18:31Z
 priority: P1
 ---
 
@@ -26,3 +26,4 @@ All planner property tests and contracts pass; scale numbers in the changelog; d
 - 2026-10-29T03:52:51Z cursor-opus: claimed
 - 2026-10-29T04:01:50Z cursor-opus: planner core committed; ban-and-replace tests next
 - 2026-10-29T04:13:33Z cursor-opus: decisions 0013/0014 and interface tasks T-022..T-025 opened; full suite and handoff next
+- 2026-10-29T04:18:31Z cursor-opus: done: done: planner, ban-and-replace, property + contract tests, scale run, decisions 0013/0014, interface tasks T-022..T-025, handoff
