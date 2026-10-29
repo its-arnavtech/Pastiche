@@ -22,3 +22,7 @@ gpu:
 
 telemetry:
   interval_s: 1.0
+
+llm:
+  url: http://127.0.0.1:11434
+  model: qwen3:4b        # already pulled on this machine (decision 0028); default llama3.2:3b is not

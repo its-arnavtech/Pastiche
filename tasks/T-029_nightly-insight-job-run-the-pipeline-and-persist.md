@@ -1,14 +1,14 @@
 ---
 id: T-029
 title: Nightly insight job: run the pipeline and persist state
-status: todo
+status: done
 owner: opus-cc
 branch:
 lane: none
 depends_on: [T-027, T-028]
 owns_paths: [src/remixer/adapters/]
 claimed_at:
-heartbeat_at:
+heartbeat_at: 2026-10-29T20:37:03Z
 priority: P1
 ---
 
@@ -23,3 +23,4 @@ A fixture night produces the same InsightState as calling run_nightly directly; 
 ## Progress and handoff log
 
 - 2026-10-29T05:22:57Z cursor-2: created
+- 2026-10-29T20:37:03Z opus-cc: done: OllamaClient (format/think/available fixes) + remixer.adapters.insight_job; contract tests tests/contracts/test_insight_job.py; live smoke against qwen3:4b (decision 0028).

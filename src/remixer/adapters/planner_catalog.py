@@ -70,6 +70,8 @@ def analysis_row(owner_id: str, owner_kind: str, result: dict[str, Any], model_v
     meta = {"meter": int(result.get("meter") or 4), "duration_ms": round(1000 * float(result.get("duration_seconds") or 0))}
     if beats:
         meta["downbeat_ms"] = round(1000 * beats[0])
+    if result.get("windows"):
+        meta["window_lufs"] = [w.get("lufs") for w in result["windows"]]   # 5-second windows (insight evidence)
     return {"owner_id": owner_id, "owner_kind": owner_kind, "model_version": model_version,
             "tempo": result.get("bpm"), "key": result.get("key"), "lufs": result.get("lufs"),
             "beats": json.dumps(beats), "energy": json.dumps(curve), "meta": json.dumps(meta)}

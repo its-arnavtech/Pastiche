@@ -52,3 +52,16 @@ side and only you can act on it:
 2. Keep the vents clear and the laptop on a hard surface; consider a cooling pad.
 3. Make sure the original (full-wattage) charger is connected; a lower-wattage USB-C charger cannot carry CPU + GPU peaks.
 4. If shutdowns continue, switching Settings > Power mode back to Balanced made round 1 (60-minute sustain) stable.
+
+## 5. Schedule the nightly insight job (optional)
+
+`remixer insights nightly` runs the insight pass once per local night (after 03:00, decision 0028). Agents do not
+register Windows scheduled tasks. To schedule it, run once in a terminal (Ollama must be running at that hour; the
+Ollama tray app starts it at login):
+
+```
+schtasks /Create /SC DAILY /ST 03:30 /TN "Pastiche insights nightly" /TR "cmd /c cd /d C:\Pastiche && uv run --no-sync remixer insights nightly"
+```
+
+The profile uses `qwen3:4b`, which is already pulled. It garbles window ids in about half its analyst/skeptic replies
+(the pipeline falls back safely); `ollama pull llama3.1:8b` and setting `llm.model` in `profile.yaml` should do better.

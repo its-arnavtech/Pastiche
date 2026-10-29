@@ -1,14 +1,14 @@
 ---
 id: T-028
 title: Ollama-backed LLMClient for the insight layer
-status: todo
+status: done
 owner: opus-cc
 branch:
 lane: none
 depends_on: [T-027]
 owns_paths: [src/remixer/adapters/, src/remixer/interfaces.py]
 claimed_at:
-heartbeat_at:
+heartbeat_at: 2026-10-29T20:37:02Z
 priority: P1
 ---
 
@@ -23,3 +23,4 @@ A contract test: scripted Ollama responses round-trip through analyst/skeptic/na
 ## Progress and handoff log
 
 - 2026-10-29T05:22:57Z cursor-2: created
+- 2026-10-29T20:37:02Z opus-cc: done: OllamaClient (format/think/available fixes) + remixer.adapters.insight_job; contract tests tests/contracts/test_insight_job.py; live smoke against qwen3:4b (decision 0028).
