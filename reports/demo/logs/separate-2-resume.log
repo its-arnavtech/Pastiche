@@ -1,0 +1,10 @@
+2026-10-29 17:35:22,878 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/htdemucs.yaml "HTTP/1.1 307 Temporary Redirect"
+2026-10-29 17:35:22,887 INFO httpx2: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/adefossez/HTDemucs/cbc8a9b1a87023b7fd74e7b3412e6321c0eab003/htdemucs.yaml?%2Fadefossez%2FHTDemucs%2Fresolve%2Fmain%2Fhtdemucs.yaml=&etag=%220d5f2089fa3e1a0335d93de070f6802598cd4a4d%22 "HTTP/1.1 200 OK"
+2026-10-29 17:35:22,957 INFO httpx2: HTTP Request: HEAD https://huggingface.co/adefossez/HTDemucs/resolve/main/955717e8.safetensors "HTTP/1.1 302 Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-29 17:35:22,958 WARNING huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-29 17:35:23,514 INFO remixer.gpu.separate: removed 4 half-written stem files from a killed worker
+2026-10-29 17:35:24,442 INFO remixer.guards: guard ok (stable): gpu 65.0 C cpu None C battery=False throttle=[] disk 542 GB
+2026-10-29 17:35:30,714 INFO remixer.gpu.separate: separate: 6.5x realtime, 0 tracks, batch 8, prefetch wait 0.0s
+2026-10-29 17:35:36,358 INFO remixer.gpu.separate: separate: 66.3x realtime, 12 tracks, batch 8, prefetch wait 0.0s
+{"stage": "separate", "tracks": 16, "audio_s": 468.0, "wall_s": 13.6, "rate_x": 34.31, "steady_rate_x": 66.33, "model_rate_x": 66.33, "batches": 10, "batch": 8, "jobs": {"done": 20}}

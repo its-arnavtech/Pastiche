@@ -1,0 +1,2 @@
+2026-10-29 17:36:56,117 INFO remixer.gpu.taste: no synthetic ratings yet: planting a synthetic taste ({'ratings': 140, 'up_frac': 0.5285714285714286})
+{"kind": "synthetic", "n_train": 120, "n_val": 20, "epochs": 30, "samples_per_s": 8025.528313827966, "val_auc": 0.8854166666666666, "val_acc": 0.8, "truth_cos": 0.9482910368544842, "path": "C:\\Pastiche\\reports\\demo\\work\\data\\models\\taste\\taste-mlp-v1-synthetic-w256.pt", "wall_s": 0.4485686000007263}

@@ -33,7 +33,7 @@ def cmd_separate(args) -> None:
     if args.heavy or args.corpus_cycle:
         met = sep.run(sep.corpus_cycle(), persist=False, duration_s=args.duration, guard=guard)
     else:
-        met = sep.run(sep.leased(limit=args.limit), persist=True, duration_s=args.duration, guard=guard)
+        met = sep.run(sep.leased(limit=args.limit, lease_s=args.lease_s), persist=True, duration_s=args.duration, guard=guard)
         if args.loop and (not args.duration or met.t0):
             import time
 
@@ -127,6 +127,7 @@ def register(sub) -> None:
     p.add_argument("--limit", type=int, help="max tracks")
     p.add_argument("--duration", type=float, help="stop after N seconds")
     p.add_argument("--loop", action="store_true", help="after the queue drains, keep the GPU busy in heavy mode")
+    p.add_argument("--lease-s", type=float, default=1800, help="job lease: a killed worker's jobs return after this long")
     p.add_argument("--corpus-cycle", action="store_true",
                    help="benchmark: cycle the catalog without writing stems or touching the queue")
     p.set_defaults(fn=cmd_separate)

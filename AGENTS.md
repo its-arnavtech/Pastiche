@@ -10,6 +10,10 @@ embed them, learn the owner's taste, and assemble new tracks from recombined ste
 Windows laptop and deliberately saturates GPU, CPU, NPU/iGPU, RAM and NVMe, then documents the
 machine's peak. Standalone project: do not reference or reuse any other existing project.
 
+**State: POC 1 is complete and tagged `v0.1-poc1` (on `main`).** Verdict with evidence: `docs/ACCEPTANCE.md`. Gaps, with fixes and
+effort: `docs/KNOWN_LIMITATIONS.md`. Whole-loop smoke test: `uv run remixer demo` (about 3 minutes, uses the GPU) or
+`remixer demo --fast` (stubs, what `tests/test_demo.py` runs). POC 2 is paper only: `docs/commercial.md` and the docs it links.
+
 - Build spec: `docs/specs/stemdna-poc1-local-max.md`. Context only: `docs/specs/stemdna-poc2-commercial.md`.
 - Hardware and tool facts: `docs/ENVIRONMENT.md`. Things only the user can do: `docs/NEEDS_USER.md`.
 - Tasks: `tasks/T-###_slug.md`. Changelog: `changelog/` (source) and `CHANGELOG.md` (generated).
@@ -23,6 +27,7 @@ machine's peak. Standalone project: do not reference or reuse any other existing
 | `opus-cc` | the laptop, Claude Code | `dev` | scaffold, coordination, core interfaces, GPU lane, telemetry, benchmarks, merging |
 | `gpt-sol` | the laptop, same working tree | `dev` | CPU lane, NPU/iGPU lane, synthetic corpus, DSP, synth lab |
 | `cursor-opus` | Cursor cloud (no access to this hardware) | `feature/skip-analytics` | event interpretation, skip heatmap, fatigue model, player UI, contract tests |
+| `wrapup` | the laptop, Claude Code | `dev` | POC 1 wrap-up: stable preset, `remixer demo`, `product.py` glue, acceptance and POC 2 docs, release |
 
 `opus-cc` is coordinator: it rebalances tasks, merges `feature/skip-analytics` into `dev` (`--no-ff`),
 and only it or the user merges `dev` into `main`, and only when `dev` passes all tests.
@@ -99,6 +104,25 @@ How to verify; Next / handoff. `agentctl changelog` regenerates `CHANGELOG.md` (
 
 ## Run modes
 
-Unleashed is the default (`remixer.guards`): thermals, battery and throttle reasons are logged, never acted
-on. The only software floor: free disk < 10 GB pauses writers and purges caches inside the data dir.
-`--safe` restores conservative guards. Checkpoint after every unit of work.
+**Stable is the default** (`remixer.presets`, `profile.yaml` `stable:` block, decision 0030): 8 CPU workers, light Demucs with batch up
+to 8, NPU only, thermal watchdog (CPU zone 93 C, GPU 94 C, 10 s medians). It is the configuration that survived two unexpected
+laptop shutdowns. `--unleashed` (or `REMIXER_UNLEASHED=1`) removes the caps and prints a warning; use it only on purpose, on AC power.
+`--safe` restores conservative guards. Always: free disk < 10 GB pauses writers and purges caches inside the data dir. Checkpoint
+after every unit of work. **Do not run sustained or ramp benchmarks without the user asking** (`bench stress` caps itself by default).
+
+## Origins (synthetic vs real)
+
+Every track, stem, recipe, event and rating has one origin. `remixer.product` takes an origin and drops the other's rows
+(`origin_catalog`, `playback_events`, `fatigue_model`, `make_planner`, `stem_taste`) and raises `OriginMixError` where mixing would be
+silent. New code that reads stems, ratings, events or taste must go through it or do the same. The player backend writes every `rate_*`
+event to `rating_events` tagged with its origin; fatigue is replayed from the event stream.
+
+## Resume rules
+
+A worker killed at any point must lose at most one unit. Register-before-ack: if outputs exist but the catalog write was lost, register
+them on restart (see `tests/test_resume.py`); sweep half-written `.partial` files of dead pids. Job leases expire (`--lease-s`).
+
+## Before you finish a session
+
+Full suite green (`uv run pytest`), changelog entry, task file updated, `docs/NEEDS_USER.md` current. Merging `dev` into `main` needs a
+green suite.

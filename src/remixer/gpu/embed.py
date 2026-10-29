@@ -264,6 +264,11 @@ class Embedder:
                 self._leased.pop(item.id, None)
                 self.a.jobs.fail(item.id, err or "no state")
             return
+        if cached and not self.a.catalog.query(
+                "SELECT 1 FROM embeddings WHERE owner_id=? AND model_version=? AND owner_kind='stem'",
+                (st.stem_id, self.version)):
+            # vectors were saved by a worker that died before its catalog write: register them now (resume)
+            self._register(st, np.load(self.vec_root / f"{st.stem_id}.npy"))
         if not cached and st.vectors:
             vecs = np.stack([v for _, v in sorted(st.vectors, key=lambda p: p[0])]).astype(np.float16)
             if not np.isfinite(vecs).all():

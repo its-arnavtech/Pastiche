@@ -21,6 +21,7 @@ COMMAND_MODULES = [
     "remixer.bench.cli",      # bench stress (opus-cc)
     "remixer.adapters.insight_job",  # insights nightly (opus-cc)
     "remixer.server.app",     # serve: FastAPI player backend (opus-cc)
+    "remixer.demo",           # demo: whole product loop on synthetic tracks (wrapup)
     "remixer.corpus.cli",     # corpus generate (gpt-sol)
     "remixer.cpu.cli",        # analyze, assemble, render (gpt-sol)
     "remixer.npu.cli",        # npu (gpt-sol)

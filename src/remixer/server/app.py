@@ -93,6 +93,9 @@ class PlayerBackend:
             self.a.events.append(STREAM, [Event.from_dict(r).to_row() | {"received_ns": t + i,
                                                                          "raw": json.dumps(r, separators=(",", ":"))}
                                           for i, r in enumerate(rows)])
+            from remixer.product import project_rating_events
+
+            project_rating_events(self.a, rows)   # ratings also land in rating_events, tagged with their origin
         return len(rows), []
 
     def events(self) -> list[dict]:

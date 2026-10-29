@@ -1,14 +1,14 @@
 ---
 id: T-031
 title: POC 1 wrap-up: stable preset, acceptance, demo, docs, release
-status: in_progress
+status: done
 owner: wrapup
 branch: dev
 lane: none
 depends_on: []
 owns_paths: []
 claimed_at: 2026-10-29T22:03:24Z
-heartbeat_at: 2026-10-29T22:03:24Z
+heartbeat_at: 2026-10-29T22:38:25Z
 priority: P0
 ---
 
@@ -24,3 +24,4 @@ docs/ACCEPTANCE.md, remixer demo log under reports/demo/, KNOWN_LIMITATIONS, POC
 
 - 2026-10-29T22:03:16Z wrapup: created
 - 2026-10-29T22:03:24Z wrapup: claimed
+- 2026-10-29T22:38:25Z wrapup: done: Released as v0.1-poc1. Acceptance: 4 pass, 1 partial. Demo 33/33.

@@ -65,3 +65,21 @@ schtasks /Create /SC DAILY /ST 03:30 /TN "Pastiche insights nightly" /TR "cmd /c
 
 The profile uses `qwen3:4b`, which is already pulled. It garbles window ids in about half its analyst/skeptic replies
 (the pipeline falls back safely); `ollama pull llama3.1:8b` and setting `llm.model` in `profile.yaml` should do better.
+
+## 6. After the POC 1 wrap-up: decisions and actions only you can take (2026-10-29)
+
+Nothing here blocks anything that was built. In rough order of value:
+
+1. **Run it on real music (S).** `uv run remixer ingest --library "<a small folder>"`, then `remixer separate`, `analyze`, `embed`. The folder is read in
+   place and never modified (`tests/test_real_use_path.py` proves it on read-only files). Nobody has heard Demucs or the planner on a real library yet.
+2. **Pick the legal path (decision, no cost).** `docs/legal-paths.md` lays out on-device, cleared catalogs and direct licensing. Nothing commercial can start
+   before this, and it needs a qualified reviewer. It is not legal advice.
+3. **Resolve the GPL pieces for any distributed or client-side build.** `pedalboard` is GPL-3.0 and brings Rubber Band, which is GPL or paid
+   (`docs/licenses.md`). Server-side only use is the lower-risk reading, which a lawyer should confirm.
+4. **Schedule the nightly insight job** (item 5 above) and, if you want better insights, `ollama pull qwen3:8b` (Apache-2.0, about 5 GB; it cannot share
+   the GPU with Demucs, so run it at night; `docs/KNOWN_LIMITATIONS.md` item 2). Both are your call: one is a persistent system change, one is a download.
+5. **Optional: one 60-minute sustain under the stable preset** (`uv run remixer bench stress --sustain 60m`) to give the final configuration and the 93 C
+   cutoff the sustain they never had. Only on AC power with clear vents; the stable preset caps itself. No agent will run it without being asked.
+6. **Optional: `uv run playwright install chromium`** (about 150 MB from Microsoft's CDN) so the browser tests stop depending on the installed Edge.
+7. **Cooling (item 4 above)** is still the only way to raise the CPU-and-GPU-together ceiling.
+8. **Publishing:** the release was pushed to `origin` (`main` and tag `v0.1-poc1`) by the wrap-up agent as asked. Nothing else was published.

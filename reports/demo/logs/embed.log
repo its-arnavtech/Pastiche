@@ -1,0 +1,17 @@
+2026-10-29 17:36:29,392 INFO httpx2: HTTP Request: GET https://huggingface.co/api/models/laion/clap-htsat-unfused/revision/main "HTTP/1.1 200 OK"
+2026-10-29 17:36:29,551 INFO httpx2: HTTP Request: GET https://huggingface.co/api/models/laion/clap-htsat-unfused/revision/main "HTTP/1.1 200 OK"
+2026-10-29 17:36:29,613 INFO httpx2: HTTP Request: HEAD https://huggingface.co/laion/clap-htsat-unfused/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-29 17:36:29,613 WARNING huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-29 17:36:29,679 INFO httpx2: HTTP Request: GET https://huggingface.co/api/models/laion/clap-htsat-unfused "HTTP/1.1 200 OK"
+2026-10-29 17:36:29,779 INFO httpx2: HTTP Request: GET https://huggingface.co/api/models/laion/clap-htsat-unfused/commits/main "HTTP/1.1 200 OK"
+2026-10-29 17:36:29,841 INFO httpx2: HTTP Request: GET https://huggingface.co/api/models/laion/clap-htsat-unfused/discussions?p=0 "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/447 [00:00<?, ?it/s]Loading weights: 100%|██████████| 447/447 [00:00<00:00, 32627.15it/s]
+2026-10-29 17:36:29,898 INFO httpx2: HTTP Request: GET https://huggingface.co/api/models/laion/clap-htsat-unfused/commits/refs%2Fpr%2F3 "HTTP/1.1 200 OK"
+2026-10-29 17:36:29,954 INFO httpx2: HTTP Request: HEAD https://huggingface.co/laion/clap-htsat-unfused/resolve/refs%2Fpr%2F3/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+2026-10-29 17:36:30,013 INFO httpx2: HTTP Request: HEAD https://huggingface.co/laion/clap-htsat-unfused/resolve/refs%2Fpr%2F3/model.safetensors "HTTP/1.1 302 Found"
+2026-10-29 17:36:30,795 INFO remixer.gpu.vram: batch size 256 for clap:laion/clap-htsat-unfused@transformers-5.21.0-logmel-f32-v2:fp16=True:win=5.0 ({'base_gib': 0.118, 'per_item_gib': 0.023, 'available_gib': 7.576, 'margin_gib': 0.6})
+2026-10-29 17:36:45,784 INFO remixer.gpu.vram: calibrated batch 12 for clap:laion/clap-htsat-unfused@transformers-5.21.0-logmel-f32-v2:fp16=True:win=5.0: {1: 48.03, 2: 103.91, 4: 205.53, 6: 278.1, 8: 366.28, 10: 410.35, 12: 431.69, 16: 435.96, 20: 431.51, 24: 421.63, 32: 410.75, 48: 397.18, 64: 385.41, 256: 94.87}
+2026-10-29 17:36:46,596 INFO remixer.guards: guard ok (stable): gpu 78.0 C cpu None C battery=False throttle=[] disk 541 GB
+{"enqueued": 80}
+{"stage": "embed", "tracks": 80, "audio_s": 2400.0, "wall_s": 3.5, "rate_x": 681.55, "steady_rate_x": 0, "model_rate_x": 0, "batches": 40, "windows": 480, "windows_per_s": 0, "batch": 12, "jobs": {"done": 80}}

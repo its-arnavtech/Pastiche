@@ -255,6 +255,24 @@ class Separator:
                 self._leased[j.id] = j
                 yield j, Path(j.payload["path"])
 
+    def sweep_partials(self) -> int:
+        """Delete half-written ``*.<pid>.partial.wav`` files left by workers that no longer exist (killed mid-write)."""
+        import psutil
+
+        n = 0
+        for p in self.stems_root.rglob("*.partial.wav"):
+            parts = p.name.split(".")
+            pid = int(parts[-3]) if len(parts) >= 4 and parts[-3].isdigit() else None
+            if pid is not None and pid != os.getpid() and not psutil.pid_exists(pid):
+                try:
+                    p.unlink()
+                    n += 1
+                except OSError:
+                    pass
+        if n:
+            log.info("removed %d half-written stem files from a killed worker", n)
+        return n
+
     def release_unfinished(self) -> int:
         """Return leased-but-unprocessed jobs to the queue (e.g. after --duration stops a run)."""
         ids = list(self._leased)
@@ -302,6 +320,7 @@ class Separator:
         done_q: queue.Queue = queue.Queue()
         writer = StemWriter(R.sr, R.sources, done_q)
         if persist:
+            self.sweep_partials()
             writer.start()
         depth = max(2, math.ceil(2 * B / max(1, n_chunks(180 * R.sr, L, S))) + 1)  # >= 2 batches ahead
         pre = Prefetcher(items, R.sr, workers=self.feeders, depth=depth)
@@ -378,6 +397,10 @@ class Separator:
         final = {s: self.stems_root / track_id[:2] / track_id / R.version.replace("@", "_") / f"{s}.wav"
                  for s in R.sources}
         if persist and all(p.exists() for p in final.values()):
+            # Finished stems on disk: a worker killed after the last rename but before its catalog write left them
+            # unregistered, so register (idempotent upsert) before acking, or the track would never get stem rows.
+            self._register(TrackState(item=loaded.item, norm=None, mean=0.0, std=1.0, frames=loaded.frames, n_chunks=0,
+                                      final_paths=final, tmp_paths={}))
             self._ack(loaded.item, cached=True)
             return None
         audio = loaded.audio.to(R.device, non_blocking=True).float() / 32768.0

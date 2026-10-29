@@ -126,6 +126,7 @@ class Guard:
         self.sensors = sensors
         self.log_every_s = log_every_s
         self._last_log = 0.0
+        self._last_warn = 0.0
         self.interventions: list[dict] = []
 
     def check(self) -> Decision:
@@ -158,7 +159,9 @@ class Guard:
         if action != "ok":
             entry = {"t": time.time(), "mode": self.mode, "action": action, "reasons": reasons, "pid": os.getpid()}
             self.interventions.append(entry)
-            log.warning("guard %s: %s", action, "; ".join(reasons))
+            if time.time() - self._last_warn >= self.log_every_s:   # a hot machine would log on every unit of work
+                self._last_warn = time.time()
+                log.warning("guard %s: %s", action, "; ".join(reasons))
             try:  # the peak report counts these
                 state = self.data_dir / "state"
                 state.mkdir(parents=True, exist_ok=True)
