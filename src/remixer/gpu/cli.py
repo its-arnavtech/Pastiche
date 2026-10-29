@@ -26,6 +26,7 @@ def cmd_separate(args) -> None:
     from remixer.guards import get_guard
 
     a = build()
+    a.compute.prioritize_current_process("gpu")
     sep = Separator(a, model=args.model, heavy=args.heavy, shifts=args.shifts, batch=args.batch,
                     feeders=args.feeders)
     guard = get_guard(a.profile.data_dir, a.profile.mode)
@@ -44,7 +45,35 @@ def cmd_separate(args) -> None:
     print(json.dumps({**summary(met), "batch": sep.sizer.batch or args.batch, "jobs": a.jobs.counts()}))
 
 
+def cmd_embed(args) -> None:
+    from remixer.adapters import build
+    from remixer.gpu.embed import Embedder, summary
+    from remixer.guards import get_guard
+
+    a = build()
+    a.compute.prioritize_current_process("gpu")
+    emb = Embedder(a, model=args.model, batch=args.batch, feeders=args.feeders)
+    guard = get_guard(a.profile.data_dir, a.profile.mode)
+    if args.corpus_cycle:
+        met = emb.run(emb.stems_cycle(), persist=False, duration_s=args.duration, guard=guard)
+    else:
+        n = emb.enqueue_missing()
+        met = emb.run(emb.leased(limit=args.limit), persist=True, duration_s=args.duration, guard=guard)
+        emb.close()
+        print(json.dumps({"enqueued": n}))
+    print(json.dumps({**summary(met), "batch": emb.sizer.batch or args.batch, "jobs": a.jobs.counts(f"embed:{emb.name}")}))
+
+
 def register(sub) -> None:
+    p = sub.add_parser("embed", help="CLAP embeddings per stem and 5-second window (holds the gpu lane)")
+    p.add_argument("--model", help="default from profile (laion/clap-htsat-unfused)")
+    p.add_argument("--batch", type=int, help="fixed batch of windows (default: autosized)")
+    p.add_argument("--feeders", type=int)
+    p.add_argument("--limit", type=int, help="max stems")
+    p.add_argument("--duration", type=float, help="stop after N seconds")
+    p.add_argument("--corpus-cycle", action="store_true", help="benchmark: cycle existing stems, write nothing")
+    p.set_defaults(fn=cmd_embed)
+
     p = sub.add_parser("ingest", help="register corpus/library tracks and enqueue separation")
     p.add_argument("--corpus", help="corpus dir (default <data>/corpus)")
     p.add_argument("--library", help="real music library (read-only)")

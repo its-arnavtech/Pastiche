@@ -174,6 +174,10 @@ class Bench:
             specs.append((lane, args, cfg))
             steps.append(Step(phase=phase, lane=lane, level=level, config=cfg, seconds=seconds, tag=tag))
         log.info("step %s: %s", tag, {s.lane: s.config for s in steps})
+        try:  # steps can outlast the initial TTL estimate: refresh our locks every step
+            acquire_locks(tuple(self.lane_names), self.owner, int(seconds // 60) + 45, f"bench {tag}", 0)
+        except SystemExit as e:
+            log.warning("lock refresh failed: %s", e)
         self.sampler.tag = tag
         t0 = time.time()
         results = run_lanes(specs, seconds, self.out / "logs")

@@ -56,6 +56,21 @@ class LocalCompute(ComputeBackend):
 
         return pynvml.nvmlDeviceGetMemoryInfo(self._h).free
 
+    def prioritize_current_process(self, lane: str) -> str:
+        """GPU-lane processes run above normal so CPU-lane saturation cannot starve the GPU feeders.
+
+        Only this process's own scheduling priority changes; nothing system-wide.
+        """
+        import psutil
+
+        p = psutil.Process()
+        try:
+            if lane == "gpu":
+                p.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS if hasattr(psutil, "ABOVE_NORMAL_PRIORITY_CLASS") else -5)
+            return str(p.nice())
+        except (psutil.AccessDenied, OSError) as e:
+            return f"unchanged ({e})"
+
     def cpu_workers(self, lane: str = "cpu") -> int:
         r = self.resources
         return {"cpu": r.cpu_workers, "gpu": r.gpu_feeders, "npu": r.npu_host_threads}[lane]
