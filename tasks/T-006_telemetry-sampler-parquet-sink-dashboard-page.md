@@ -1,14 +1,14 @@
 ---
 id: T-006
 title: Telemetry sampler, Parquet sink, dashboard page
-status: review
+status: done
 owner: opus-cc
 branch: dev
 lane: none
 depends_on: [T-001]
 owns_paths: [src/remixer/telemetry/]
 claimed_at: 2026-10-29T02:46:00Z
-heartbeat_at: 2026-10-29T03:28:25Z
+heartbeat_at: 2026-10-29T05:07:30Z
 priority: P0
 ---
 
@@ -25,3 +25,4 @@ priority: P0
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner opus-cc)
 - 2026-10-29T02:46:00Z opus-cc: claimed
 - 2026-10-29T03:28:25Z opus-cc: handoff: sampler + dashboard landed; NPU utilization not exposed by Windows counters here
+- 2026-10-29T05:07:30Z opus-cc: handoff: used across all runs
