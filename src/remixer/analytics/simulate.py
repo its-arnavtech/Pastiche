@@ -88,7 +88,7 @@ class Player:
 
     def _emit(self, event_type: str) -> None:
         t = self.track
-        info = dict(self.client_info, duration_ms=t.duration_ms)
+        info = dict(self.client_info, duration_ms=t.duration_ms, seq=len(self.events))
         self.events.append(Event(
             f"{self.session_id}-{len(self.events)}", self.session_id, t.track_id, t.track_version,
             event_type, int(self.pos), int(self.wall), t.source_kind, info))

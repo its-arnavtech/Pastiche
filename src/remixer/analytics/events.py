@@ -13,6 +13,7 @@ One envelope for every player control. Fields, in storage order:
 from __future__ import annotations
 
 import datetime as dt
+import json
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping
 
@@ -31,6 +32,7 @@ EVENT_FIELDS = (
     "position_ms", "wall_time", "source_kind", "client_info", "payload",
 )
 REQUIRED_FIELDS = EVENT_FIELDS[:8]
+JSON_FIELDS = ("client_info", "payload")
 _STRING_FIELDS = ("event_id", "session_id", "track_id", "track_version")
 
 
@@ -67,6 +69,27 @@ class Event:
             "wall_time": self.wall_time, "source_kind": self.source_kind,
             "client_info": dict(self.client_info), "payload": dict(self.payload),
         }
+
+    def to_row(self) -> dict[str, Any]:
+        """Flat storage row: nested fields as compact JSON text (Parquet / EventSink layout)."""
+        d = self.to_dict()
+        for k in JSON_FIELDS:
+            d[k] = json.dumps(d[k], separators=(",", ":"), sort_keys=True)
+        return d
+
+    @classmethod
+    def from_row(cls, r: Mapping[str, Any]) -> "Event":
+        d = {k: r[k] for k in EVENT_FIELDS if k in r}
+        for k in JSON_FIELDS:
+            if isinstance(d.get(k), str):
+                d[k] = json.loads(d[k])
+        return cls.from_dict(d)
+
+    @property
+    def seq(self) -> int:
+        """Client emit order (``client_info.seq``); breaks wall-time ties when storage reorders rows."""
+        s = self.client_info.get("seq") if self.client_info else None
+        return s if isinstance(s, int) and not isinstance(s, bool) else -1
 
     @classmethod
     def from_dict(cls, d: Mapping[str, Any]) -> "Event":
@@ -130,8 +153,8 @@ def validate_event(d: Mapping[str, Any]) -> list[str]:
 
 
 def sort_events(events: Iterable[Event]) -> list[Event]:
-    """Session, then wall time; stable, so append order breaks ties."""
-    return sorted(events, key=lambda e: (e.session_id, e.wall_time))
+    """Session, wall time, then ``client_info.seq``; stable, so append order breaks remaining ties."""
+    return sorted(events, key=lambda e: (e.session_id, e.wall_time, e.seq))
 
 
 def group_sessions(events: Iterable[Event]) -> dict[str, list[Event]]:

@@ -53,3 +53,18 @@ def test_sort_is_stable_for_equal_wall_times():
     a = Event.from_dict(good(event_id="a", event_type="seek_fwd_5s"))
     b = Event.from_dict(good(event_id="b", event_type="seek_fwd_5s"))
     assert [e.event_id for e in sort_events([a, b])] == ["a", "b"]
+
+
+def test_row_roundtrip_keeps_nested_fields():
+    e = Event.from_dict(good(client_info={"seq": 3, "ua": "x"}, payload={"insight_id": "i1"}))
+    row = e.to_row()
+    assert isinstance(row["client_info"], str) and isinstance(row["payload"], str)
+    assert Event.from_row(row) == e
+    assert Event.from_row({**row, "extra_storage_column": 1}) == e
+
+
+def test_seq_breaks_wall_time_ties_regardless_of_storage_order():
+    a = Event.from_dict(good(event_id="a", event_type="next", client_info={"seq": 7}))
+    b = Event.from_dict(good(event_id="b", event_type="play", client_info={"seq": 8}))
+    assert [e.event_id for e in sort_events([b, a])] == ["a", "b"]
+    assert Event.from_dict(good(client_info={"seq": True})).seq == -1

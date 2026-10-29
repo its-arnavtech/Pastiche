@@ -25,7 +25,6 @@ from .interpret import DEFAULT_CONFIG, InterpretConfig, VersionKey
 from .simulate import iter_sessions, make_library
 
 _INT_FIELDS = ("position_ms", "wall_time")
-_JSON_FIELDS = ("client_info", "payload")
 
 
 def _schema():
@@ -49,10 +48,9 @@ def write_events_parquet(batches: Iterable[list[Event]], path: Path, rows_per_gr
 
         for batch in batches:
             for e in batch:
-                d = e.to_dict()
+                d = e.to_row()
                 for f in EVENT_FIELDS:
-                    v = d[f]
-                    buf[f].append(json.dumps(v, separators=(",", ":")) if f in _JSON_FIELDS else v)
+                    buf[f].append(d[f])
             n += len(batch)
             if len(buf["event_id"]) >= rows_per_group:
                 flush()
