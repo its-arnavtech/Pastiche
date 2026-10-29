@@ -6,7 +6,7 @@ owner: cursor-opus
 branch: feature/skip-analytics
 lane: none
 depends_on: [T-014]
-owns_paths: [src/remixer/analytics/fatigue.py, src/remixer/analytics/selection.py]
+owns_paths: [src/remixer/fatigue/, tests/fatigue/]
 claimed_at:
 heartbeat_at:
 priority: P1

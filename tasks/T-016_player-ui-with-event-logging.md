@@ -6,7 +6,7 @@ owner: cursor-opus
 branch: feature/skip-analytics
 lane: none
 depends_on: [T-014]
-owns_paths: [src/remixer/player/]
+owns_paths: [web/, tests/web/]
 claimed_at:
 heartbeat_at:
 priority: P1
