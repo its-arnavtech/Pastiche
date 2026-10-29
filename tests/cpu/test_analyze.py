@@ -28,7 +28,7 @@ def test_mmap_analysis_matches_bs1770(tmp_path):
     assert result == analyze_file(path, tmp_path / "features.json")
 
 
-@pytest.mark.parametrize("bpm", [75, 100, 140, 170])
+@pytest.mark.parametrize("bpm", [70, 75, 100, 138, 140, 150, 154, 159, 164, 169, 170, 175])
 def test_tempo_against_seeded_ground_truth(tmp_path, bpm):
     row = generate_track(TrackSpec(3, duration=12, sample_rate=8000, bpm=bpm), tmp_path)
     result = analyze_file(row["paths"]["mix"])
@@ -45,6 +45,20 @@ def test_durable_analysis_is_idempotent(tmp_path):
         assert enqueue_analysis(queue, [row], tmp_path / "features") == 5
         assert enqueue_analysis(queue, [row], tmp_path / "features") == 0
         assert drain_analysis(queue, workers=1)["counts"] == {"done": 5}
+        import json
+        saved = json.loads((tmp_path / "features" / row["track_id"] / "mix.json").read_text())
+        assert saved["synthetic"] is True and saved["real"] is False
+        assert all(window["synthetic"] is True for window in saved["windows"])
         assert drain_analysis(queue, workers=1)["completed"] == 0
     finally:
         queue.close()
+
+
+def test_track_summary_uses_harmony_and_percussion_without_labels():
+    from remixer.cpu.analyze import combine_stem_features
+    result = combine_stem_features({"mix": {"key": "F minor", "bpm": 75, "beat_positions": [], "lufs": -16},
+                                    "other": {"key": "C minor"},
+                                    "drums": {"bpm": 150, "beat_positions": [0, .4]}})
+    assert result["key"] == "C minor" and result["key_source"] == "other"
+    assert result["bpm"] == 150 and result["tempo_source"] == "drums"
+    assert result["mix_only_key"] == "F minor" and result["mix_only_bpm"] == 75

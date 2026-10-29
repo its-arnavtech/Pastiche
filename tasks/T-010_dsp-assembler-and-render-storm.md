@@ -8,7 +8,7 @@ lane: cpu
 depends_on: [T-009]
 owns_paths: [src/remixer/cpu/assemble.py, src/remixer/cpu/render.py]
 claimed_at: 2026-10-29T02:42:11Z
-heartbeat_at: 2026-10-29T02:42:11Z
+heartbeat_at: 2026-10-29T04:16:42Z
 priority: P1
 ---
 
@@ -24,3 +24,6 @@ Same recipe + seed gives a byte-identical render; renders/sec logged.
 
 - 2026-10-29T02:29:55Z opus-cc: created (intended owner gpt-sol)
 - 2026-10-29T02:42:12Z gpt-sol: claimed
+- 2026-10-29T03:04:35Z gpt-sol: Implementations committed fb81ca7; full suite42 passed and17 focused regressions passed. Analysis and NPU sustain active; peak runner will tune then sustain each CPU stage after analysis.
+- 2026-10-29T03:40:30Z gpt-sol: Track refinement completed:100%key accuracy and0.276BPM MAE over500tracks;mix-only limitations retained. Tuning throughfinalsynth stage, then4x600s CPU sustains. IntelGPU600s=84806embeddings/s;CPUbaseline followedbydualasyncIntelrun.
+- 2026-10-29T04:16:42Z gpt-sol: Fullsuite76andfocused22passed;codecomplete. Four600s sustains inprogress;bothIntelengines heldthroughpeak. Reportandscalingfigureatdocs/reports/cpu-lane.md.

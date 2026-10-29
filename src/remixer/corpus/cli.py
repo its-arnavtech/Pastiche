@@ -15,10 +15,12 @@ def register(sub):
     generate.add_argument("--output", type=Path)
     generate.add_argument("--min-duration", type=float, default=120)
     generate.add_argument("--max-duration", type=float, default=300)
+    generate.add_argument("--legacy-arrangement", action="store_true")
     generate.set_defaults(fn=_generate)
 
 
 def _generate(args):
     from .generate import generate_corpus
     print(json.dumps(generate_corpus(args.output or data_dir() / "corpus", args.n, args.seed,
-                                      args.workers, args.min_duration, args.max_duration), indent=2))
+                                      args.workers, args.min_duration, args.max_duration,
+                                      varied=not args.legacy_arrangement), indent=2))

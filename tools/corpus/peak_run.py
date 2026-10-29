@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -14,11 +15,10 @@ import time
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data", type=Path, default=Path("data"))
+    parser.add_argument("--data", type=Path, default=Path(os.environ.get("REMIXER_DATA_DIR", "data")))
     parser.add_argument("--tune-seconds", type=float, default=15)
     parser.add_argument("--sustain-seconds", type=float, default=600)
     args = parser.parse_args()
-    from remixer.cpu.tuner import sustain, tune
     from remixer.corpus.generate import atomic_json
     destination = args.data / "cpu-peak"
     destination.mkdir(parents=True, exist_ok=True)
@@ -28,6 +28,13 @@ def main():
     analysis = json.loads((args.data / "analysis" / "benchmark.json").read_text())
     if analysis["errors"] or analysis["items"] != 2500:
         raise RuntimeError("full 500-track/2500-item analysis must succeed before peak tuning")
+    # Keep the waiting runner lightweight, and load current stage implementations
+    # only at dispatch. This also avoids holding stale checkpoint helpers while
+    # other authorized implementation work completes.
+    import importlib
+    import remixer.corpus.generate as corpus_module
+    importlib.reload(corpus_module)
+    from remixer.cpu.tuner import sustain, tune
     atomic_json(destination / "runner.json", {"phase": "tuning", "time": time.time()})
     tuning = tune(args.data / "corpus", destination / "tuning", args.tune_seconds)
     if not all(row["converged"] for row in tuning["convergence"].values()):

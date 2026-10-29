@@ -21,12 +21,16 @@ def stage_unit(stage: str, slot: int, destination: Path, source: dict) -> float:
         return row["duration"]
     if stage == "analysis":
         from .analyze import analyze_file
-        row = analyze_file(source["paths"]["mix"], destination / f"analysis-{slot}.json", force=True)
+        row = analyze_file(source["paths"]["mix"], destination / f"analysis-{slot}.json", force=True,
+                           provenance={name: source.get(name) for name in ("synthetic", "augmented", "real")})
         return row["duration_seconds"]
     if stage == "render":
         from .assemble import assemble
         from .render import render
-        recipe = assemble([source], seed=slot, duration=10, bpm=123)
+        from remixer.corpus.generate import KEY_NAMES
+        tonic, mode = source["key"].split()
+        target_key = KEY_NAMES[(KEY_NAMES.index(tonic) + 2) % 12] + " " + mode
+        recipe = assemble([source], seed=slot, duration=10, bpm=float(source["bpm"]) * 1.1, key=target_key)
         return render(recipe, destination / f"render-{slot}.wav", force=True)["duration_seconds"]
     if stage == "synth":
         import numpy as np
@@ -150,8 +154,19 @@ def sustain(corpus: Path, destination: Path, seconds: float = 600, tuning: Path 
         settings = configured.get(stage, {})
         # Assignment requests a full-budget sustain even if a smaller pool is
         # slightly more efficient. Record tuned settings alongside this result.
-        row = measure(stage, destination / stage, source, configured_workers(),
-                      settings.get("chunk_size", 1), seconds, None)
+        if stage == "synth":
+            from remixer.synth.lab import evolve
+            row = evolve(destination / stage, seconds=seconds, workers=configured_workers())
+            row.update({"units": row["clips"], "units_per_minute": row["clips_per_minute"],
+                        "chunk_size": None, "affinity": None})
+        elif stage == "render":
+            from .render import render_storm
+            row = render_storm(corpus, destination / stage, seconds, configured_workers())
+            row.update({"units": row["renders"], "units_per_minute": row["renders_per_minute"],
+                        "chunk_size": None, "affinity": None})
+        else:
+            row = measure(stage, destination / stage, source, configured_workers(),
+                          settings.get("chunk_size", 1), seconds, None)
         row["tuned_configuration"] = settings
         results.append(row)
         atomic_json(destination / "sustain.json", {"results": results})

@@ -32,3 +32,34 @@ def test_generator_rejects_invalid_audio(tmp_path):
         generate_track(TrackSpec(1, duration=0), tmp_path)
     with pytest.raises(ValueError):
         generate_track(TrackSpec(1, bpm=0), tmp_path)
+
+
+def test_atomic_checkpoint_retries_transient_windows_sharing(monkeypatch, tmp_path):
+    import json
+    from remixer.corpus.generate import atomic_json
+    original, attempts = Path.replace, []
+    def sharing_once(source, destination):
+        attempts.append(1)
+        if len(attempts) < 3:
+            raise PermissionError("temporary reader sharing violation")
+        return original(source, destination)
+    monkeypatch.setattr(Path, "replace", sharing_once)
+    atomic_json(tmp_path / "checkpoint.json", {"completed": 3})
+    assert len(attempts) == 3
+    assert json.loads((tmp_path / "checkpoint.json").read_text()) == {"completed": 3}
+
+
+def test_arrangements_vary_harmony_and_rhythm_without_changing_legacy_identity(tmp_path):
+    import hashlib
+    import json
+    spec = TrackSpec(4, duration=2, sample_rate=8000)
+    values = spec.resolved()
+    assert "arrangement" not in values
+    legacy = generate_track(spec, tmp_path / "legacy")
+    assert legacy["track_id"] == hashlib.sha256(("procedural-v1" + json.dumps(values, sort_keys=True)).encode()).hexdigest()
+    a = generate_track(TrackSpec(4, duration=2, sample_rate=8000, arrangement=1), tmp_path / "varied")
+    b = generate_track(TrackSpec(4, duration=2, sample_rate=8000, arrangement=2), tmp_path / "varied")
+    assert a["version"] == b["version"] == "procedural-v2"
+    assert a["chord_progression_degrees"] != b["chord_progression_degrees"]
+    assert a["drum_pattern"] != b["drum_pattern"]
+    assert a["hashes"]["drums"] != b["hashes"]["drums"]

@@ -15,11 +15,15 @@ import yaml
 
 
 def configured_workers(requested: int | None = None, *, npu_active: bool = False) -> int:
-    path = Path(os.environ.get("REMIXER_RESOURCES", "config/resources.yaml"))
+    from remixer.config import REPO_ROOT
+    path = Path(os.environ.get("REMIXER_RESOURCES", str(REPO_ROOT / "config/resources.yaml")))
     config = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
-    budget = int(config.get("cpu_lane", {}).get("workers", max(1, (os.cpu_count() or 1) - 5)))
-    budget = min(budget, max(1, (os.cpu_count() or 1) - 1))
-    lock = Path(".locks/npu.json")
+    actual = os.cpu_count() or 1
+    reserve = max(1, int(config.get("reserve", {}).get("logical_cores", 1)))
+    feeders = min(int(config.get("gpu_lane", {}).get("feeder_cores", 4)), max(0, actual - reserve - 1))
+    available = max(1, actual - reserve - feeders)
+    budget = min(int(config.get("cpu_lane", {}).get("workers", available)), available)
+    lock = REPO_ROOT / ".locks/npu.json"
     if lock.exists():
         from datetime import datetime, timezone
         try:
@@ -86,10 +90,14 @@ class LaneMonitor:
                     cpu += times.user + times.system
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
-            self.rows.append({"elapsed": time.perf_counter() - self.started,
+            from remixer.guards import get_guard, read_sensors
+            readings = read_sensors(get_guard().data_dir)
+            self.rows.append({"elapsed": time.perf_counter() - self.started, "wall_time": time.time(),
                               "per_core_cpu_percent": psutil.cpu_percent(percpu=True),
                               "process_tree_rss_bytes": rss, "process_tree_cpu_seconds": cpu,
-                              "system_memory_used_bytes": psutil.virtual_memory().used})
+                              "system_memory_used_bytes": psutil.virtual_memory().used,
+                              "cpu_temperature_c": readings.cpu_temp_c, "gpu_temperature_c": readings.gpu_temp_c,
+                              "on_battery": readings.on_battery, "gpu_throttle": readings.gpu_throttle})
 
     def __exit__(self, *_):
         self.stop.set()
@@ -107,4 +115,9 @@ class LaneMonitor:
                 "system_memory_peak_bytes": max((row["system_memory_used_bytes"] for row in self.rows), default=None),
                 "system_disk_read_bytes_per_second": (self.io_end.read_bytes - self.io_start.read_bytes) / self.elapsed,
                 "system_disk_write_bytes_per_second": (self.io_end.write_bytes - self.io_start.write_bytes) / self.elapsed,
-                "cpu_temperature_c": None, "cpu_temperature_note": "No portable CPU temperature reader configured"}
+                "cpu_temperature_c": max((row["cpu_temperature_c"] for row in self.rows if row["cpu_temperature_c"] is not None), default=None),
+                "gpu_temperature_peak_c": max((row["gpu_temperature_c"] for row in self.rows if row["gpu_temperature_c"] is not None), default=None),
+                "battery_observed": any(row["on_battery"] is True for row in self.rows),
+                "gpu_throttle_reasons": sorted({reason for row in self.rows for reason in row["gpu_throttle"]}),
+                "sample_series": self.rows,
+                "cpu_temperature_note": "Optional shared sensor adapter; null means unavailable"}

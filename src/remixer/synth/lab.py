@@ -13,7 +13,7 @@ from typing import Protocol
 import numpy as np
 import soundfile as sf
 
-from remixer.corpus.generate import atomic_json
+from remixer.corpus.generate import atomic_json, atomic_replace
 from remixer.cpu.runtime import LaneMonitor, configured_workers, guarded, process_pool
 
 
@@ -137,8 +137,13 @@ def evolve(destination: Path, *, generations: int = 10, seconds: float | None = 
         population = [Genome.from_dict(value) for value in saved["population"]]
         population_size = len(population)
         generation, history = saved["generation"], saved["history"]
-    started, clips, new_generations = time.perf_counter(), 0, 0
+    clips, new_generations = 0, 0
     with LaneMonitor() as monitor, process_pool(workers) as pool:
+        warm = [pool.submit(evaluate_genome, (population[slot % len(population)], sample_rate, scorer))
+                for slot in range(workers)]
+        for future in warm:
+            future.result()
+        started, started_wall_time = time.perf_counter(), time.time()
         while (time.perf_counter() - started < seconds) if seconds is not None else (new_generations < generations):
             guarded(destination)
             results = list(pool.map(evaluate_genome, ((genome, sample_rate, scorer) for genome in population)))
@@ -152,12 +157,15 @@ def evolve(destination: Path, *, generations: int = 10, seconds: float | None = 
             new_generations += 1
             clips += len(results)
             history.append({"generation": generation, "best_fitness": results[0]["fitness"], "best_hash": results[0]["audio_hash"]})
-            sf.write(destination / "best.wav", render_genome(elites[0], sample_rate), sample_rate, subtype="PCM_16")
+            best_temp = destination / "best.partial.wav"
+            sf.write(best_temp, render_genome(elites[0], sample_rate), sample_rate, subtype="PCM_16")
+            atomic_replace(best_temp, destination / "best.wav")
             atomic_json(checkpoint, {"generation": generation, "population": [asdict(genome) for genome in population],
                                      "history": history, "rng_state": rng.bit_generator.state,
                                      "scorer": scorer_name, "sample_rate": sample_rate, "synthetic": True})
     elapsed = time.perf_counter() - started
     result = {"stage": "synth", "workers": workers, "generations": new_generations, "clips": clips,
+              "timing_started_wall_time": started_wall_time, "timing_ended_wall_time": time.time(),
               "wall_seconds": elapsed, "clips_per_minute": clips * 60 / elapsed,
               "generations_per_second": new_generations / elapsed, "synthetic": True,
               "scorer": scorer_name, "best_fitness": history[-1]["best_fitness"], **monitor.summary()}

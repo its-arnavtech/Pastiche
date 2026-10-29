@@ -22,6 +22,46 @@ uv sync --extra analytics; uv run pytest -m 'not scale and not web' -> 212 tests
 
 cursor-opus: on your next session rebase/merge dev; your decisions are now 0013-0017 and the contract task is T-021. Web tests (-m web) need 'uv sync --extra web-test' and 'playwright install chromium' (not run here). opus-cc will wire the real FastAPI backend later only if time allows; the mock backend stays the reference.
 
+## 2026-10-29T04:20:31Z gpt-sol [fix] 20261029-042031_gpt-sol_provenance-and-benchmark-timing
+
+Branch: `dev`. Tasks: T-008, T-009, T-010, T-011, T-012, T-013.
+
+### What changed
+
+Source provenance now follows selected recipe stems and every analysis/window/queue result; unknown sources never become real by default. All2500 original synthetic feature files retagged from their manifest. Benchmark timers exclude instrumentation startup and warm render/evolution workers; async timing guarantees a measured request under short deadlines. Windows atomic replacement retries, portable core reserve/feeder caps and versioned arrangement variety retain prior artifacts and seed reproducibility.
+
+### Why
+
+Meet strict synthetic/real separation and avoid startup-only microbenchmarks under deliberate full-system load.
+
+### How to verify
+
+Full repository suite76passed;focused CPU/NPU22passed,including provenance,queue,source-audio overwrite,tempo70-175anddelayed-instrumentation async checks. Originalcorpus key100%,BPMMAE0.275584;baseline retained.
+
+### Next / handoff
+
+Continue final evolution600s sustain and24varied-track integration;update finalreport and hand offCPU/NPUlocks toopus-ccT018. Budget-ceiling selections are explicitly distinguished from an observed worker plateau.
+
+## 2026-10-29T04:16:02Z gpt-audit [fix] 20261029-041602_gpt-audit_gpu-env-audit
+
+Branch: `dev`. Tasks: T-020.
+
+### What changed
+
+Diagnosed misleading CPython missing-file quote; reproduced it with an isolated copied launcher. Documented working shared interpreter, CUDA torch provenance, Intel OpenVINO attribution, and safe conditional repair. Added lease-aware isolated CUDA/Demucs probe.
+
+### Why
+
+Avoid replacing a live environment or blaming CPU-only torch when the current lock and installation already select CUDA.
+
+### How to verify
+
+Shared launcher and base Python both 3.11.15; config contains no quotes; copied missing-path launcher reproduces quote. Full isolated repository suite: 76 passed, exit 0. Isolated torch 2.14.1+cu130 / CUDA 13.0 / torchaudio 2.11.0+cu130: CUDA available, RTX 4060 identified, 3776 matmuls in 20.078 s with repeated 99-100% nvidia-smi utilization. Pretrained htdemucs separated synthetic stereo into finite [1,4,2,44100] stems on cuda:0 in 1.578 s. Audit GPU lease released; shared config hash unchanged. Raw results data/audit/gpu-probe.json.
+
+### Next / handoff
+
+opus-cc: keep existing explicit pytorch-cu130 torch mapping and shared .venv; retain your concurrent GPU scheduling and VRAM-sizing fixes (decisions 0010/0012). CPU feeder starvation, not CPU-only torch or Intel CUDA routing, explains low GPU duty cycle. A process-local UV_CACHE_DIR under data/audit fixes the reproduced restricted-cache failure. Main env is active: defer any repair; exact idle-gated commands are in the audit. After the T-005 worker exited, its unchanged lease remained; two host checks confirmed no CUDA worker/process, then the exact abandoned lease was recovered per decision 0008 before audit acquisition. Lease PID alone is insufficient because it can identify the acquisition CLI. Both CUDA probe and suite now pass; no main dependency change is needed.
+
 ## 2026-10-29T04:10:49Z opus-cc [perf] 20261029-041049_opus-cc_gpu-priority-embed
 
 Branch: `dev`. Tasks: T-005, T-004, T-007.
@@ -41,6 +81,46 @@ uv run pytest tests/test_embed.py; uv run remixer separate --corpus-cycle --batc
 ### Next / handoff
 
 Decision numbers 0008/0009 were taken by gpt-audit and gpt-sol concurrently; mine are 0010-0012. Use 'ls docs/decisions' right before picking a number.
+
+## 2026-10-29T04:10:02Z gpt-sol [perf] 20261029-041002_gpt-sol_measured-cpu-knees-and-track-estimates
+
+Branch: `dev`. Tasks: T-008, T-009, T-010, T-011, T-012, T-013.
+
+### What changed
+
+All four CPU stages met two-round<3%convergence; selected workers/chunk:corpus16/4,analysis12/1,render16/1,synth16/1. Original500 tracks score100%stem-supported key and0.276BPM MAE, with51%mix-only key retained. Added versioned eight-progression/four-drum-style generation while preserving legacy identities, selected-source provenance, source overwrite rejection, portable feeder/reserve budgets, retry-safe checkpoints, nonempty async timing, and real full-stage warm-ups. First corpus600s sustain90.87%hostCPU;analysis600s sustain90.98%hostCPU. NPU+iGPU concurrent600s:145477/92174embeddings/s.
+
+### Why
+
+Finish the complete assigned stages with measured accuracy, scaling and real sustained load; keep baseline limitations and physical overlap evidence visible.
+
+### How to verify
+
+31 focused CPU/NPU tests passed; full rerun in progress after short-duration async scheduling fix and warm-up handling. Hardware data:data/cpu-peak/tuning/tuning.json,data/cpu-peak/sustain/sustain.json,data/npu/dual/benchmark.json.
+
+### Next / handoff
+
+Continue render/evolution600s sustains and24arrangement validation;align GPU telemetry;refresh report,marktasksdone,commitonlyownedpaths,pushdev,andreleaseCPU/NPUlocksforcoordinator combinedT-018.
+
+## 2026-10-29T03:58:37Z gpt-sol [handoff] 20261029-035837_gpt-sol_live-peak-overlap-window
+
+Branch: `dev`. Tasks: T-007, T-018, T-013.
+
+### What changed
+
+CPU/NPU full peak is live. Four stages at600s each follow completed worker/chunk/P-E sweeps; corpus sustain16workers averaged90.87%hostCPU. Both Intel engines held through CPU sequence with one host loop; iGPU PDH measured98.9% compute. GPU context sampling currently shows NVIDIAidle0% (NVML Unknown at idle; Windowscounter verified).
+
+### Why
+
+Need real NVIDIA overlap to certify each required CPU stage sustained alongside the GPU lane. Do not launch duplicate CPU/NPU jobs on top of these owner locks.
+
+### How to verify
+
+data/cpu-peak/runner.json;data/cpu-peak/sustain/sustain.json;data/npu/peak-hold/checkpoint.json;data/cpu-peak/gpu-overlap.jsonl.
+
+### Next / handoff
+
+opus-cc:GPU-only bench/Demucs may run concurrently now;CPU+Intel physical lanes already loaded by gpt-sol. GPUtiming/telemetry will be aligned to CPU stage epochs;repeat CPU stages if needed for full10-minute GPUoverlap. Current CPU/NPU locks stay with gpt-sol during sustain.
 
 ## 2026-10-29T03:50:27Z opus-cc [feat] 20261029-035027_opus-cc_bench-stress
 
@@ -141,6 +221,26 @@ uv run pytest tests/test_gpu_lane.py; uv run remixer separate --duration 60; uv 
 ### Next / handoff
 
 Measured: htdemucs fp16 ~51x realtime sustained at batch 10 (calibrated; batch 12+ spills into shared memory on WDDM - no OOM, 2x slower). GPU sits at 86-89 C, SM clock 1.6-2.3 GHz, 50-75 W of a 90 W enforced limit: thermally bound. NVML utilization query returns Unknown Error when the dGPU idles (gaps in telemetry, harmless). No NPU perf counters exist on this machine: the NPU lane must report its own inferences/s.
+
+## 2026-10-29T03:20:06Z gpt-sol [fix] 20261029-032006_gpt-sol_windows-checkpoint-recovery
+
+Branch: `dev`. Tasks: T-008, T-009, T-010, T-011, T-012, T-013.
+
+### What changed
+
+Added bounded retry for transient Windows delete-sharing failures during atomic replacement; regression reproduces two denied replacements then success. Added bounded async Intel dual-engine feeding, complete evolution/render storm sustains, timestamped sensor and CPU sample series, and artifact-driven CPU report tooling. Restarted incomplete GPU.0/CPU baseline; NPU600s result retained.
+
+### Why
+
+A concurrent checkpoint read stopped the original iGPU run at248s; atomic checkpoints must tolerate short Windows reader holds. Full stage sustains must exercise evolution and cross-source recipes.
+
+### How to verify
+
+uv run pytest tests/cpu/test_corpus.py tests/npu/test_scorer.py:6passed; previous fullsuite42passed andfocused17passed; all2500 corpus analysis outputs complete with zeroerrors.
+
+### Next / handoff
+
+Tuning active through allworker/chunk/P-E configurations, then600s perstage. Recovered Intel baseline followed by600s simultaneous NPU/iGPU. Accuracy confusions under investigation; preserve reported baseline rather than infer success.
 
 ## 2026-10-29T03:16:11Z cursor-opus [feat] 20261029-031611_cursor-opus_fatigue-selection
 
